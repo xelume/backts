@@ -1,0 +1,16 @@
+{
+  "name": "@backts/example-todo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "coverage": "node ../../scripts/nativeTests.ts coverage && node ../../scripts/compileNative.ts coverage src/main.ts",
+    "build": "node ../../scripts/compileNative.ts build src/main.ts .scriptc/todo",
+    "start": ".scriptc/todo",
+    "test:build": "node ../../scripts/nativeTests.ts build"
+  },
+  "dependencies": {
+    "@backts/core": "workspace:*"
+  }
+}

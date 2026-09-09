@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>scriptc Todo Demo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="eyebrow">Native TypeScript</p>
+        <h1>Todo workspace</h1>
+        <p class="subtitle">Search, organize and finish your tasks. Tasks stay until the server restarts.</p>
+      </header>
+
+      <form id="create-form" class="create-form">
+        <label for="todo-title">New task</label>
+        <div class="create-row">
+          <input
+            id="todo-title"
+            name="title"
+            maxlength="120"
+            placeholder="What needs to be done?"
+            autocomplete="off"
+            required
+          />
+          <button type="submit">Add</button>
+        </div>
+      </form>
+
+      <form id="filter-form" class="filters">
+        <label>Search<input id="search" type="search" maxlength="120" placeholder="Search tasks…" /></label>
+        <label>Status<select id="filter-status"><option value="all">All tasks</option><option value="active">Active</option><option value="completed">Completed</option></select></label>
+        <button type="submit">Apply</button>
+      </form>
+      <section aria-labelledby="todo-heading">
+        <div class="section-heading">
+          <h2 id="todo-heading">Tasks</h2>
+          <span id="todo-count">0 items</span>
+        </div>
+        <p id="status" role="status">Loading…</p>
+        <ul id="todo-list" class="todo-list"></ul>
+        <nav class="pagination" aria-label="Task pages">
+          <button id="previous" type="button">Previous</button>
+          <span id="page-label">Page 1</span>
+          <button id="next" type="button">Next</button>
+        </nav>
+        <button id="retry" type="button" hidden>Try again</button>
+      </section>
+    </main>
+
+    <template id="todo-template">
+      <li class="todo-item">
+        <input class="todo-toggle" type="checkbox" aria-label="Toggle completed" />
+        <input class="todo-edit" maxlength="120" aria-label="Todo title" />
+        <button class="delete-button" type="button">Delete</button>
+      </li>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

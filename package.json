@@ -1,0 +1,22 @@
+{
+  "name": "backts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BackTS: build native backend services with TypeScript.",
+  "packageManager": "pnpm@10.33.4",
+  "scripts": {
+    "typecheck": "pnpm --filter @backts/core typecheck && pnpm --filter @backts/example-todo typecheck && tsc -p tsconfig.json",
+    "coverage": "pnpm --filter @backts/core coverage && pnpm --filter @backts/example-todo coverage",
+    "build": "pnpm --filter @backts/core build && pnpm --filter @backts/example-todo build",
+    "start": "pnpm --filter @backts/example-todo start",
+    "test:build": "pnpm --filter @backts/core test:build && pnpm --filter @backts/example-todo test:build",
+    "test": "pnpm build && pnpm test:build && node --test tests/integration/*.test.ts",
+    "check": "pnpm typecheck && pnpm coverage && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "scriptc": "0.0.36",
+    "typescript": "7.0.2"
+  }
+}

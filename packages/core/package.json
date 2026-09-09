@@ -1,0 +1,20 @@
+{
+  "name": "@backts/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BackTS HTTP framework for building native backend services with TypeScript.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "coverage": "node ../../scripts/nativeTests.ts coverage",
+    "test:build": "node ../../scripts/nativeTests.ts build"
+  }
+}
