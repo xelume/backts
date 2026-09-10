@@ -6,17 +6,18 @@
   "description": "BackTS: build native backend services with TypeScript.",
   "packageManager": "pnpm@10.33.4",
   "scripts": {
-    "typecheck": "pnpm --filter @backts/core typecheck && pnpm --filter @backts/example-todo typecheck && tsc -p tsconfig.json",
-    "coverage": "pnpm --filter @backts/core coverage && pnpm --filter @backts/example-todo coverage",
-    "build": "pnpm --filter @backts/core build && pnpm --filter @backts/example-todo build",
+    "dev": "pnpm --filter @backts/example-todo dev",
+    "build": "pnpm -r --if-present build",
     "start": "pnpm --filter @backts/example-todo start",
-    "test:build": "pnpm --filter @backts/core test:build && pnpm --filter @backts/example-todo test:build",
-    "test": "pnpm build && pnpm test:build && node --test tests/integration/*.test.ts",
-    "check": "pnpm typecheck && pnpm coverage && pnpm test"
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
+    "analyze": "pnpm -r --if-present analyze",
+    "test": "pnpm -r --if-present test:build && node --test tests/cli/*.test.ts tests/integration/*.test.ts",
+    "check": "pnpm build && pnpm typecheck && pnpm analyze && pnpm test",
+    "coverage": "pnpm analyze"
   },
   "devDependencies": {
     "@types/node": "26.4.0",
-    "scriptc": "0.0.36",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "@backts/cli": "workspace:*"
   }
 }

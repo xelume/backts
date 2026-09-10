@@ -1,0 +1,30 @@
+{
+  "name": "create-backts",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Create a BackTS application.",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "create-backts": "dist/bin.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown src/bin.ts --format esm --platform node --target node24",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "pnpm typecheck && pnpm build"
+  },
+  "dependencies": {
+    "@backts/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "0.23.0"
+  }
+}

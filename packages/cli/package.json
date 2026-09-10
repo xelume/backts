@@ -1,0 +1,48 @@
+{
+  "name": "@backts/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Create, develop and build BackTS native applications.",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "backts": "dist/bin.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./compiler": {
+      "types": "./dist/compiler.d.mts",
+      "import": "./dist/compiler.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.mts",
+      "import": "./dist/testing.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "pnpm typecheck && pnpm build"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.0",
+    "commander": "^14.0.3",
+    "scriptc": "0.0.36",
+    "typescript": "7.0.2"
+  },
+  "devDependencies": {
+    "tsdown": "0.23.0"
+  }
+}

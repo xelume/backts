@@ -1,20 +1,24 @@
 {
-  "name": "@backts/example-todo",
+  "name": "__PROJECT_NAME__",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "backts dev",
     "build": "backts build",
     "start": "backts start",
     "typecheck": "tsc --noEmit",
-    "analyze": "backts analyze && backts analyze --tests",
-    "test:build": "backts build --tests"
+    "analyze": "backts analyze"
   },
   "dependencies": {
-    "@backts/core": "workspace:*"
+    "@backts/core": "0.1.0"
   },
   "devDependencies": {
-    "@backts/cli": "workspace:*"
+    "@backts/cli": "__CLI_VERSION__",
+    "@types/node": "26.4.0",
+    "typescript": "7.0.2"
   }
 }

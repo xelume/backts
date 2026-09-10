@@ -20,7 +20,7 @@ await app.run(3000);
 
 ## 构建与验证
 
-包以 TypeScript 源码交付，`build` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。当前 scriptc 0.0.36 无法直接静态编译此框架的裸包导入；工作区通过 `scripts/compileNative.ts` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。此工具当前是工作区开发工具，不是已发布的消费 CLI。
+包以 TypeScript 源码交付，`typecheck` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。当前 scriptc 0.0.36 无法直接静态编译此框架的裸包导入；CLI 通过 `@backts/cli/compiler` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。独立应用通过 `backts build` 使用此能力；包尚未发布 npm。
 
 `tests/httpServer.native.ts` 仅包含框架契约测试路由，通过公开包入口创建应用；不导入 Todo。`tests/compatibility.native.ts` 为类与生命周期探针。
 

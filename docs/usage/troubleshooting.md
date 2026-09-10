@@ -9,9 +9,10 @@
 | 现象 | 检查与处理 |
 | --- | --- |
 | 修改代码后没有效果 | start 不构建，先 build 再重启 |
-| 裸包导入能通过 tsc，但 scriptc 失败 | 使用本仓库 compileNative.ts，检查源码是否通过公开 exports 导入 |
+| 裸包导入能通过 tsc，但 scriptc 失败 | 使用`backts build`，检查源码是否通过公开 exports 导入 |
 | 新增 example 没被根 check 检查 | 根命令目前显式指定 core 与 Todo，新包先运行自己的命令 |
-| 地址被占用或端口非法 | 检查现有进程与端口范围；框架不会自动换端口 |
+| 启动失败并提示 EADDRINUSE | 日志包含被占用的监听地址；停止占用进程或修改应用端口，框架不会自动换端口。嵌入式 listen 的拒绝错误也包含此提示 |
+| 端口非法导致启动失败 | 端口必须是 1–65535 的整数 |
 | Request body already read | 中间件与 handler 是否重复或交叉读取 body |
 | JSON 请求返回 415 | 设置 application/json；其他 JSON 后缀媒体类型不自动接受 |
 | 返回 413 | 检查原始 body 大小和 maximumBodyBytes |
@@ -37,4 +38,3 @@
 - [编译与测试入口](testing.md)
 - [请求体与响应限制](requestResponse.md)
 - [日志设置](logging.md)
-

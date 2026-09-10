@@ -9,7 +9,7 @@ test("example native domain contracts", () => {
 });
 
 test("independent Todo consumer preserves its HTTP contracts", async () => {
-  await withServer("examples/todo/.scriptc/todo", async (port) => {
+  await withServer("examples/todo/.scriptc/app", async (port) => {
     assert.deepEqual(JSON.parse((await expect(port, "GET", "/api/todos?x=1", 200)).body), []);
     assert.deepEqual(JSON.parse((await expect(port, "POST", "/api/todos", 201, JSON.stringify({ title: "  学习 scriptc  " }))).body),
       { id: 1, title: "学习 scriptc", completed: false });
@@ -39,7 +39,7 @@ test("independent Todo consumer preserves its HTTP contracts", async () => {
     assert.equal((await expect(port, "DELETE", "/api/todos/1", 204)).body, "");
     await expect(port, "DELETE", "/api/todos/1", 404);
     assert.deepEqual(JSON.parse((await expect(port, "GET", "/api/todos", 200)).body), []);
-    const duplicate = spawnSync(`${root}examples/todo/.scriptc/todo`, [String(port)], { cwd: `${root}examples/todo`, timeout: 5000 });
+    const duplicate = spawnSync(`${root}examples/todo/.scriptc/app`, [String(port)], { cwd: `${root}examples/todo`, timeout: 5000 });
     assert.ifError(duplicate.error);
     assert.notEqual(duplicate.status, 0, "Port conflict must fail startup");
     assert.match(duplicate.stderr.toString(), /Server startup failed/);
@@ -56,7 +56,7 @@ test("independent Todo consumer preserves its HTTP contracts", async () => {
 });
 
 test("Todo search, pagination, details and response middleware", async () => {
-  await withServer("examples/todo/.scriptc/todo", async (port) => {
+  await withServer("examples/todo/.scriptc/app", async (port) => {
     for (const title of ["Alpha", "Beta", "alphabet"]) await expect(port, "POST", "/api/todos", 201, JSON.stringify({ title }));
     await expect(port, "PATCH", "/api/todos/1", 200, '{"completed":true}');
     const page = await expect(port, "GET", "/api/todos?q=ALP&limit=1&offset=1", 200);

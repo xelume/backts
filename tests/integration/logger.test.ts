@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { createServer } from "node:net";
 import { test } from "node:test";
 import { request, unusedPort, root } from "./nativeServer.ts";
 
@@ -98,4 +99,41 @@ test("failed startup emits no route inventory", () => {
   assert.equal(result.status, 1);
   assert.equal(result.stdout, "");
   assert.equal(JSON.parse(result.stderr).event, "startupFailed");
+  assert.equal(JSON.parse(result.stderr).message, "Server startup failed");
+});
+
+test("occupied port reports its address and remedy through run loggers and listen rejection", async () => {
+  const owner = createServer();
+  await new Promise<void>((resolve, reject) => {
+    owner.once("error", reject);
+    owner.listen(0, "127.0.0.1", resolve);
+  });
+  try {
+    const address = owner.address();
+    assert(address !== null && typeof address !== "string");
+    const message = `Cannot listen on 127.0.0.1:${address.port}: Address already in use (EADDRINUSE). Stop the process using this address, or choose another port.`;
+    for (const mode of ["default", "json", "custom", "off", "broken", "listen"]) {
+      const result: SpawnSyncReturns<string> = spawnSync(`${root}packages/core/.scriptc/loggerServer`, [String(address.port), mode, `${root}examples/todo/public`], {
+        encoding: "utf8", timeout: 8000, env: { ...process.env, LOG_FORMAT: "pretty" },
+      });
+      assert.ifError(result.error);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      if (mode === "off" || mode === "broken") assert.equal(result.stdout + result.stderr, "");
+      else if (mode === "json" || mode === "custom") {
+        const event = JSON.parse(mode === "custom" ? result.stdout.trim().slice(7) : result.stderr);
+        assert.equal(event.event, "startupFailed");
+        assert.equal(event.level, "error");
+        assert.equal(event.message, message);
+        assert.equal(mode === "custom" ? result.stderr : result.stdout, "");
+      } else {
+        assert.equal(result.stdout, "");
+        assert(result.stderr.includes(message), result.stderr);
+        if (mode === "listen") assert(result.stderr.startsWith("LISTEN FAILED: "));
+        else assert.match(result.stderr, /ERROR\s+\[Application\]/);
+        assert.equal(result.stderr.trim().split("\n").length, 1);
+      }
+    }
+  } finally {
+    await new Promise<void>((resolve, reject) => owner.close((error) => error ? reject(error) : resolve()));
+  }
 });

@@ -18,6 +18,10 @@ app.get("/error", async () => { throw new Error("Private failure"); });
 app.group("/api").group("/todos").get("/:id", async (context) => { context.json(200, "{}"); });
 app.serveStatic({ root: process.argv[4]!, prefix: "/assets/" });
 if (mode === "listen") {
-  await app.listen({ host: "127.0.0.1", port: Number(process.argv[2]!) });
+  try { await app.listen({ host: "127.0.0.1", port: Number(process.argv[2]!) }); }
+  catch (error) {
+    console.error("LISTEN FAILED: " + (error instanceof Error ? error.message : "Unknown failure"));
+    process.exit(1);
+  }
   process.on("SIGTERM", () => { void app.close(); });
 } else await app.run({ host: "127.0.0.1", port: Number(process.argv[2]!) });

@@ -18,6 +18,14 @@ export interface RequestCompletion {
 /** 不参与响应；Promise 拒绝由框架隔离，不自动延长服务关闭等待。 */
 export type CompletionObserver = (result: RequestCompletion) => Promise<void>;
 
+/** 已确认的监听地址冲突；消息可安全用于启动日志。 */
+export class AddressInUseError extends Error {
+  constructor(host: string, port: number) {
+    const address = host.includes(":") ? `[${host}]:${port}` : `${host}:${port}`;
+    super(`Cannot listen on ${address}: Address already in use (EADDRINUSE). Stop the process using this address, or choose another port.`);
+  }
+}
+
 /** HTTP 传输适配器；只管理连接和响应生命周期，不接管进程退出。 */
 export class HttpServer {
   private connections = new HttpConnections();
@@ -86,8 +94,9 @@ export class HttpServer {
     this.server = server;
     return new Promise((resolve, reject) => {
       let listening = false;
-      server.on("error", () => {
+      server.on("error", (error) => {
         if (listening) this.logger.message("internalError", "error", "HTTP server error");
+        else if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") reject(new AddressInUseError(options.host, options.port));
         else reject(new Error("HTTP server failed"));
       });
       server.listen(options.port, options.host, () => {

@@ -56,7 +56,7 @@ flowchart TD
 | `httpConnections.ts` | 连接所有权和活动响应计数 |
 | `staticFiles.ts` | 静态路径防护和文件响应 |
 | `examples/todo/src/todos/registerRoutes.ts` | Todo 自身的 HTTP 路由映射 |
-| `scripts/compileNative.ts` | 仅开发环境使用的 TS7 源码图整理与编译调用 |
+| `packages/cli/src/native/compiler.ts` | 仅开发环境使用的 TS7 源码图整理与编译调用 |
 
 HttpServer、ManagedRuntime、RequestPipeline、RequestErrors 没有从包根导出。现有 Router、HttpContext 集成方法保留兼容，应用优先使用 Application 和 RouteGroup。未为了隐藏历史 API 引入新的接口层或破坏迁移。
 
@@ -97,3 +97,9 @@ API 示例与字段语义见 [core README](../packages/core/README.md)。
 scriptc 对跨 unknown 参数的自定义异常判断有限制，所以在传输 catch 处生成 RequestFailure，再传递给策略；Promise 观察使用 async/await。保留 aborted 事件导致的 C 后端回退，不启用动态引擎。中间件执行控制不提供尚未验证的请求 deadline 或自动取消保证。
 
 日志策略由 core 的 `logger.ts` 统一拥有，Application 构造时注入请求、传输及进程生命周期组件。业务通过 logger 配置选择内置格式、静默或自定义出口；观察回调保持独立。日志出口异常被隔离，不改变响应和退出行为。
+
+## CLI 包边界
+
+`@backts/core` 只交付框架 TS 源码。`@backts/cli` 交付 Node 可执行 JS、原生编译适配和内置 basic 模板；固定依赖 scriptc 与 TypeScript 的已验证版本。`create-backts` 通过 CLI 根导出的 `runCli()` 实现创建入口，不复制模板或生成逻辑。CLI 不导入示例或 core 私有源码，模板应用通过 `@backts/core` 的 exports 导入框架。
+
+原生测试发现与准备由 CLI 的 `native/tests.ts` 拥有，公开入口为 `@backts/cli/testing`。根 package.json 直接使用 pnpm 递归命令，无自定义任务编排。模板目前无需独立包或生成插件协议。

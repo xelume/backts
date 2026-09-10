@@ -3,7 +3,7 @@ import { HttpContext } from "./httpContext";
 import { HttpError } from "./httpError";
 import { Router, type Handler } from "./router";
 import { StaticFiles, type StaticOptions } from "./staticFiles";
-import { HttpServer, type CompletionObserver } from "./httpServer";
+import { AddressInUseError, HttpServer, type CompletionObserver } from "./httpServer";
 import { ManagedRuntime } from "./managedRuntime";
 import { RequestErrors, type ErrorHandler, type ErrorObserver } from "./requestErrors";
 import { RequestPipeline, type Middleware } from "./requestPipeline";
@@ -107,9 +107,9 @@ export class Application {
       const options = resolveListenOptions(input, host);
       this.freeze();
       await this.runtime.run(options);
-    } catch {
+    } catch (error) {
       this.runtime.detach();
-      this.logger.message("startupFailed", "error", "Server startup failed");
+      this.logger.message("startupFailed", "error", error instanceof AddressInUseError ? error.message : "Server startup failed");
       process.exit(1);
     }
   }

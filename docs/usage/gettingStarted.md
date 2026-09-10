@@ -49,7 +49,7 @@ curl -i 'http://localhost:3000/api/todos?status=active&limit=10&offset=0'
 
 ## 修改代码后重启
 
-`pnpm start` 只运行已构建的二进制。修改代码后需要重新构建并重启；当前没有热更新或 watch 模式。Ctrl+C 由框架托管关闭。
+`pnpm start` 只运行已构建的二进制。开发时运行 `pnpm --filter @backts/example-todo dev`，修改 TypeScript 后先编译，成功才替换旧服务；失败时旧服务继续运行。开发替换最多等待旧服务 1 秒。Ctrl+C 关闭开发进程及其子进程；详见 [CLI](cli.md)。
 
 ## 相关文档
 

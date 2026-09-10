@@ -5,7 +5,7 @@ import { expect, root, withServer } from "./nativeServer.ts";
 
 test("run handles invalid startup configuration with a controlled failure", () => {
   for (const port of ["0", "65536", "not-a-port"]) {
-    const child = spawnSync(`${root}examples/todo/.scriptc/todo`, [port], { cwd: `${root}examples/todo`, encoding: "utf8", timeout: 5000 });
+    const child = spawnSync(`${root}examples/todo/.scriptc/app`, [port], { cwd: `${root}examples/todo`, encoding: "utf8", timeout: 5000 });
     assert.ifError(child.error);
     assert.equal(child.status, 1);
     assert.match(child.stderr, /Server startup failed/);
@@ -14,7 +14,7 @@ test("run handles invalid startup configuration with a controlled failure", () =
 });
 
 test("run closes gracefully on SIGINT", async () => {
-  await withServer("examples/todo/.scriptc/todo", async (port) => {
+  await withServer("examples/todo/.scriptc/app", async (port) => {
     await expect(port, "GET", "/health", 200);
   }, "SIGINT");
 });
