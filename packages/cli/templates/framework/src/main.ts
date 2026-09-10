@@ -1,6 +1,6 @@
 import { createApplication } from "@backts/framework";
-import { helloModule } from "./hello";
+import { AppModule } from "./appModule";
 
-const app = createApplication({ modules: [helloModule] });
+const app = createApplication({ module: AppModule });
 const port = process.argv.length > 2 ? Number(process.argv[2]!) : 3000;
 await app.run(port);

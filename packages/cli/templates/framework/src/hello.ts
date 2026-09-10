@@ -1,4 +1,4 @@
-import type { ApplicationModule } from "@backts/framework";
+import { defineModule, defineController, jsonRoute, factoryProvider, provideController } from "@backts/framework";
 import type { HttpContext } from "@backts/core";
 
 class HelloService {
@@ -7,17 +7,19 @@ class HelloService {
 
 class HelloController {
   constructor(private service: HelloService) {}
-  async index(context: HttpContext): Promise<void> {
-    context.json(200, JSON.stringify({ message: this.service.message() }));
+  async index(_context: HttpContext): Promise<{ message: string }> {
+    return { message: this.service.message() };
   }
 }
 
-export const helloModule: ApplicationModule = {
-  prefix: "/",
-  configure: (scope) => {
-    scope.controller(() => new HelloController(new HelloService()), (routes, controller) => {
-      routes.get("", (context) => controller.index(context));
-      routes.get("/health", async (context) => { context.json(200, '{"status":"ok"}'); });
-    });
-  },
-};
+const helloController = defineController<HelloController>({
+  routes: [jsonRoute({ method: "GET", path: "", action: (controller: HelloController, context) => controller.index(context) })],
+});
+
+const helloService = factoryProvider("HelloService", (_resolve) => new HelloService());
+
+export const HelloModule = defineModule({
+  name: "HelloModule",
+  providers: [helloService],
+  controllers: [provideController((resolve) => new HelloController(resolve.get(helloService)), helloController)],
+});

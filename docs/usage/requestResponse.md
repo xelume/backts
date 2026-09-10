@@ -61,7 +61,7 @@ app.post("/validated-items", async (context) => {
 });
 ```
 
-示例只回显校验结果，不执行持久化。`as` 不是运行时校验；原生 checked cast 还可能抛错，因此在 HTTP 边界捕获并映射为 400。完整业务校验可以参考 [Todo 输入解析](../../examples/todo/src/todos/todoInput.ts)。
+示例只回显校验结果，不执行持久化。`as` 不是运行时校验；原生 checked cast 还可能抛错，因此在 HTTP 边界捕获并映射为 400。完整业务校验可以参考 [Todo 输入解析](../../examples/todo/src/todos/controller.ts)。
 
 ### 请求体只能读取一次
 

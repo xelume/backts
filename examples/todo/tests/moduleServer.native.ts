@@ -1,19 +1,28 @@
-import { createApplication } from "@backts/framework";
-import { todoModule } from "../src/todos/module";
-import { InMemoryTodoRepository } from "../src/todos/inMemoryTodoRepository";
-import { TodoInputError } from "../src/todos/todoService";
+import { createApplication, defineModule, valueProvider } from "@backts/framework";
+import { TodoModule, todoRepository } from "../src/todos/module";
+import { createInMemoryTodoRepository, type TodoRepository } from "../src/todos/repository";
+import { TodoInputError } from "../src/todos/service";
 
-const first = new InMemoryTodoRepository();
-const second = new InMemoryTodoRepository();
+// 定制装配仅服务于测试，复用生产路由和模块错误边界。
+function createTestTodoModule(repository: TodoRepository, prefix: string, name: string) {
+  return defineModule({
+    name, prefix,
+    providers: (TodoModule.providers ?? []).map((binding) => binding.key.id === todoRepository.key.id ? valueProvider(todoRepository, repository) : binding),
+    controllers: TodoModule.controllers ?? [],
+  });
+}
+
+const first = createInMemoryTodoRepository();
+const second = createInMemoryTodoRepository();
 first.create("seed");
-const app = createApplication({ http: { logger: false }, modules: [{ prefix: "/api", middleware: [async (context, next) => {
+const app = createApplication({ http: { logger: false }, module: defineModule({ name: "AppModule", prefix: "/api", middleware: [async (context, next) => {
   context.header("x-parent", "yes");
   await next();
-}], configure: (scope) => {
-  scope.mount(todoModule("/first", first.port()));
-  scope.mount(todoModule("/second", second.port()));
-  scope.mount(todoModule("/shared", first.port()));
-} }] });
+}], imports: [
+  createTestTodoModule(first, "/first", "FirstTodoModule"),
+  createTestTodoModule(second, "/second", "SecondTodoModule"),
+  createTestTodoModule(first, "/shared", "SharedTodoModule"),
+] }) });
 const parent = app.group("/api");
 parent.get("/outside", async () => { throw new TodoInputError("private"); });
 app.get("/health", async (context) => { context.json(200, "{}"); });

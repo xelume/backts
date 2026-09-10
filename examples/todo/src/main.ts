@@ -1,19 +1,10 @@
-import {createApplication} from '@backts/framework';
-import {InMemoryTodoRepository} from './todos/inMemoryTodoRepository';
-import {todoModule} from './todos/module';
+import { createApplication } from '@backts/framework';
+import { AppModule } from './appModule';
+import { securityHeaders } from './securityHeaders';
 
-const repository = new InMemoryTodoRepository();
-const app = createApplication({ modules: [todoModule('/api/todos', repository.port())] });
-app.use(async (context, next) => {
-  context.header("x-content-type-options", "nosniff");
-  context.header("referrer-policy", "same-origin");
-  await next();
-});
+const app = createApplication({ module: AppModule });
+app.use(securityHeaders);
 app.serveStatic('./public');
-
-app.get('/health', async (context) => {
-  context.json(200, JSON.stringify({status: 'ok'}));
-});
 
 const port = process.argv.length > 2 ? Number(process.argv[2]!) : 3000;
 await app.run(port);

@@ -73,6 +73,12 @@ test("Todo search, pagination, details and response middleware", async () => {
     const home = await expect(port, "GET", "/", 200);
     assert.equal(home.headers["x-content-type-options"], "nosniff");
     assert.match(home.body, /id="filter-form"/);
+    for (const [path, status] of [["/health", 200], ["/missing", 404]] as const) {
+      const response = await expect(port, "GET", path, status);
+      assert.equal(response.headers["x-content-type-options"], "nosniff");
+      assert.equal(response.headers["referrer-policy"], "same-origin");
+      if (path === "/health") assert.deepEqual(JSON.parse(response.body), { status: "ok" });
+    }
     assert.equal((await expect(port, "GET", "/api/todos?limit=0", 400)).headers["referrer-policy"], "same-origin");
   });
 });

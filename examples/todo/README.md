@@ -5,12 +5,14 @@
 独立的框架消费者，依赖 `@backts/framework` 与 `@backts/core`。所有业务源码、启动入口与领域测试均属于本包，不属于框架。
 
 ```text
-src/main.ts                 选择仓储、挂载模块、监听及退出
-src/todos/module.ts         装配 Service/Controller、路由与领域错误边界
-src/todos/todoController.ts HTTP 与业务转换
-src/todos/todoService.ts    业务规则
-src/todos/todoRepository.ts 业务拥有的存储契约
-src/todos/inMemoryTodoRepository.ts 内存实现
+src/main.ts                 引用 AppModule、注册全局中间件、配置静态目录并启动
+src/appModule.ts            根模块，集中组合 TodoModule 和 HealthModule
+src/health/module.ts        健康检查路由
+src/securityHeaders.ts      全局安全响应头中间件
+src/todos/module.ts         声明模块并装配仓储、Service 和 Controller
+src/todos/controller.ts     接口声明、HTTP 输入与业务结果转换
+src/todos/service.ts        业务规则
+src/todos/repository.ts     数据类型、仓储契约与内存实现
 tests/domain.native.ts             实例隔离和快照等原生领域测试
 ```
 
@@ -23,7 +25,9 @@ pnpm --filter @backts/example-todo start
 
 默认监听 localhost:3000，可向 start 传入端口。入口只调用 await app.run(port)；启动错误、日志和 SIGINT/SIGTERM 关闭由框架处理，不再在示例中编写 try/catch 或 shutdown()。端口参数仍由示例解析。修改代码需重新构建并重启。
 
-Service 只依赖业务拥有的仓储接口。`port()` 用显式方法委托适配 scriptc 0.0.36 的类实例到接口转换限制；该适配属于示例，不是框架的 DI API。
+Service 只依赖业务拥有的仓储接口。调用 `createInMemoryTodoRepository()` 直接获得 TodoRepository，无需调用适配方法。工厂通过闭包持有独立状态，直接返回仓储对象，不要求存储实现使用类。
+
+2026-09-10 使用当前锁定的 scriptc 0.0.36 重新验证：把类实例直接传给 TodoService 的两个位置均报 SC2002（record shapes must match exactly or width-coerce）。后续升级先验证类直接返回为 TodoRepository，再运行原生领域、模块隔离和 HTTP 测试。通过后工厂内部可改为直接返回实例，删除委托和过时说明；工厂名称、返回契约和消费者保持不变。不要保留依赖旧编译器必定失败的测试。
 
 ## Todo 示例契约
 
@@ -46,7 +50,10 @@ Todo 为 `{ id: number, title: string, completed: boolean }`。标题去除首�
 
 分发时同时携带可执行文件和 public 目录，并从包含 public 的目录启动；相对路径按进程 cwd 解析，不是按二进制位置解析。框架包中不包含这些示例资源。
 
-`todoModule` 在 `src/todos/module.ts` 中返回 ApplicationModule，由 framework 执行 Controller 工厂并绑定领域错误边界；入口提供前缀与仓储契约。main.ts 选择仓储实现并拥有资源生命周期。URL 和响应契约不变；不同仓储实例隔离，复用同一仓储时显式共享数据。
+`AppModule` 通过 imports 引入 `TodoModule` 和 `HealthModule`。TodoModule 通过 providers/controllers 声明仓储、Service 和 Controller，framework 在每次应用装配时创建并复用实例，导入模块文件不会创建仓储实例；main.ts 配置全局中间件、静态目录并启动应用。TodoModule 直接使用 `defineModule` 声明；应用级测试可通过 `overrides: [valueProvider(todoRepository, fakeRepository)]` 替换仓储，无需重写 Controller 装配。URL 和响应契约不变；默认应用的数据隔离，显式复用同一仓储时共享数据。
+
+
+Controller 的列表、详情、创建和更新方法统一返回业务数据，HTTP 映射与 Controller 放在同一文件，通过 framework 的 `defineController`、`jsonRoute` 和 `noContentRoute` 自动注册与响应，不再手写序列化器。状态码、响应头、输入规则和领域错误映射仍由应用声明。
 
 ## 查询与页面
 
@@ -69,7 +76,7 @@ curl 'http://localhost:3000/api/todos/1'
 curl 'http://localhost:3000/api/todos' -H 'Content-Type: application/json' -d '{"title":"Study scriptc"}'
 ```
 
-新增接口的开发流程：先在 TodoService 添加规则与领域测试，再在 todoInput.ts 解析外部输入、TodoController 转换结果，最后在 module.ts 注册。领域异常由 errorBoundary.ts 统一映射为 HttpError；模块声明将该中间件绑定到自身作用域，框架自动记录请求完成日志。日志不记录 body、query 或凭证。
+新增接口的开发流程：先在 TodoService 添加规则与领域测试，再在 controller.ts 内部解析外部输入、转换结果并声明 HTTP 映射。业务通过 Controller 的 mapException 声明领域错误映射，framework 负责捕获并应用映射；框架自动记录请求完成日志。日志不记录 body、query 或凭证。
 
 查询目前在内存快照上扫描，适合示例规模；持久化或大数据量场景需要仓储查询接口。本轮不修改 core API，也不把 Todo 参数规则放进框架。
 
@@ -99,4 +106,4 @@ pretty 日志示例（终端自动着色）：
 
 框架标识为青色，时间和耗时为暗灰，上下文为黄色；INFO 绿色、WARN 黄色、ERROR 红色。`Application` 表示服务生命周期，`HTTP` 表示请求完成，`Exception` 表示请求错误或内部错误。耗时表示当前请求的耗时；JSON 和自定义出口保留原有事件结构。
 
-启动监听成功后，框架默认列出完整 API 路径（包括 `:id` 参数）及静态资源挂载前缀。main.ts 无需额外装配。使用 `createApplication({ modules: [], http: { logger: { routes: false } } })` 只关闭该清单，或通过 `logger.write` 自定义 `routeMapped` / `staticMounted` 事件的输出，详见 [core 日志配置](../../packages/core/README.md#启动路由清单)。
+启动监听成功后，框架默认列出完整 API 路径（包括 `:id` 参数）及静态资源挂载前缀。main.ts 无需额外装配。使用 `createApplication({ module: AppModule, http: { logger: { routes: false } } })` 只关闭该清单，或通过 `logger.write` 自定义 `routeMapped` / `staticMounted` 事件的输出，详见 [core 日志配置](../../packages/core/README.md#启动路由清单)。

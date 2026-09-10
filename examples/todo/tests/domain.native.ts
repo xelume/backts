@@ -1,12 +1,12 @@
-import { InMemoryTodoRepository } from "../src/todos/inMemoryTodoRepository";
-import { TodoService } from "../src/todos/todoService";
+import { createInMemoryTodoRepository } from "../src/todos/repository";
+import { TodoService } from "../src/todos/service";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
 }
 
-const first = new TodoService(new InMemoryTodoRepository().port());
-const second = new TodoService(new InMemoryTodoRepository().port());
+const first = new TodoService(createInMemoryTodoRepository());
+const second = new TodoService(createInMemoryTodoRepository());
 const created = first.create("  one  ");
 assert(created.title === "one", "Title normalization");
 created.title = "modified";

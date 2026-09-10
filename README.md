@@ -15,7 +15,7 @@
 
 examples/basic 展示普通函数处理器；examples/todo 展示框架模块与 Controller/Service。core 内部可以使用类，但用户不需要定义类或继承基类。框架采用显式工厂，不提供反射容器或装饰器。
 
-本次预发布 API 迁移：从 core 导入 Application 并 new 的旧用法改为 createHttpApp()；应用类型为 HttpApp。框架式应用改用 @backts/framework 的 createApplication({ modules })。两者复用同一 HTTP 与生命周期实现。
+本次预发布 API 迁移：从 core 导入 Application 并 new 的旧用法改为 createHttpApp()；应用类型为 HttpApp。框架式应用改用 @backts/framework 的 createApplication({ module: AppModule })。两者复用同一 HTTP 与生命周期实现。
 
 - [业务组织与两种入口](docs/usage/businessCode.md)
 - [架构与扩展边界](docs/architecture.md)
