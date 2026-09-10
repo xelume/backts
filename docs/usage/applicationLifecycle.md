@@ -7,7 +7,7 @@
 ## 应用选项
 
 ```ts
-const app = new Application({
+const app = createHttpApp({
   maximumBodyBytes: 64 * 1024,
   logger: { format: "pretty", routes: true },
 });
@@ -21,7 +21,7 @@ const app = new Application({
 | `onError` | 无 | 观察请求异常 |
 | `onRequestComplete` | 无 | 观察响应完成或连接提前关闭 |
 
-`new Application(16384)` 仍可用；需要多个选项时优先使用对象形式。
+`createHttpApp(16384)` 仍可用；需要多个选项时优先使用对象形式。
 
 ## 启动地址
 

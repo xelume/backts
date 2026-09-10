@@ -46,7 +46,8 @@ CLI 不替用户停止已有服务；启动前应确认目标端口可用。自�
 
 ## 包与兼容边界
 
-- @backts/core：TS 源码框架，零 CLI 运行依赖。
+- @backts/core：TS 源码基础能力包，零 CLI 运行依赖。
+- @backts/framework：可选模块/Controller 装配，依赖 core 公开入口。
 - @backts/cli：Node JS 命令、编译能力、内置模板；公开根 API runCli 与 /compiler API compileNative。
 - create-backts：调用 CLI 的创建入口；不复制模板。
 
@@ -89,7 +90,7 @@ node tests/cli/packedApp.ts /tmp/backts-cli-acceptance/my-api
 
 ## 发布状态
 
-三个包已准备 tarball 分发，尚未提交或发布。npm 包名/组织权限、版本意图工具和发布流程还需在首次正式发布前落实；建议采用 Changesets。升级 CLI 时应同步检查模板固定的 core 兼容版本，不能只修改一个版本号后跳过仓库外验收。
+四个包配置为可分发，尚未提交或发布。npm 包名/组织权限、版本意图工具和发布流程还需在首次正式发布前落实；建议采用 Changesets。升级 CLI 时应同步检查模板固定的 core/framework 兼容版本，不能只修改一个版本号后跳过仓库外验收。
 
 ## 原生测试准备与仓库任务
 
@@ -98,3 +99,13 @@ node tests/cli/packedApp.ts /tmp/backts-cli-acceptance/my-api
 工作区内日常使用根目录 `pnpm dev/build/typecheck/analyze/test/check`。安装依赖后即可使用 CLI；build 只构建原生应用。check 显式串行执行 build、typecheck、analyze 和 test。core 和 CLI 均无自身 build 步骤；原生测试发现器由 CLI 拥有，应用不引用仓库相对路径脚本。详细执行顺序见 [检查与测试](testing.md)。
 
 start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；带选项前缀的应用参数仍需放在 `--` 后。
+
+## 框架模板
+
+使用 `backts create my-app --template framework --skip-install` 生成框架式应用，默认 basic 保持轻量函数处理器。仓库外 tarball 验证框架模板时还须打包并安装 @backts/framework，与 core 一起提供；模板不依赖仓库路径。
+
+```sh
+pnpm --filter @backts/framework pack --pack-destination /tmp/backts-cli-acceptance/artifacts
+```
+
+包版本工具尚未建立，本次未提交或发布；正式发布需先建立版本意图与发布检查流程。

@@ -1,6 +1,6 @@
-import { Application, HttpError } from "@backts/core";
+import { createHttpApp, HttpError } from "@backts/core";
 
-const app = new Application();
+const app = createHttpApp();
 const directory = process.argv[3]!;
 app.serveStatic(directory);
 app.serveStatic(directory, "/assets");

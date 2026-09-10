@@ -1,7 +1,7 @@
-import { Application, type ApplicationResource } from "@backts/core";
+import { createHttpApp, type ApplicationResource } from "@backts/core";
 
 const mode = process.argv[3] ?? "sequence";
-const app = new Application({ logger: false });
+const app = createHttpApp({ logger: false });
 let ready = false;
 let working = false;
 function event(value: string): void { console.log(value); }

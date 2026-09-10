@@ -1,5 +1,5 @@
 {
-  "name": "@backts/example-todo",
+  "name": "@backts/example-basic",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,12 +8,10 @@
     "build": "backts build",
     "start": "backts start",
     "typecheck": "tsc --noEmit",
-    "analyze": "backts analyze && backts analyze --tests",
-    "test:build": "backts build --tests"
+    "analyze": "backts analyze"
   },
   "dependencies": {
-    "@backts/core": "workspace:*",
-    "@backts/framework": "workspace:*"
+    "@backts/core": "workspace:*"
   },
   "devDependencies": {
     "@backts/cli": "workspace:*"

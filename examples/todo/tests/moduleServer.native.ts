@@ -1,19 +1,20 @@
-import { Application } from "@backts/core";
-import { registerTodoModule } from "../src/todos/module";
+import { createApplication } from "@backts/framework";
+import { todoModule } from "../src/todos/module";
 import { InMemoryTodoRepository } from "../src/todos/inMemoryTodoRepository";
 import { TodoInputError } from "../src/todos/todoService";
 
-const app = new Application({ logger: false });
 const first = new InMemoryTodoRepository();
 const second = new InMemoryTodoRepository();
 first.create("seed");
-const parent = app.group("/api", [async (context, next) => {
+const app = createApplication({ http: { logger: false }, modules: [{ prefix: "/api", middleware: [async (context, next) => {
   context.header("x-parent", "yes");
   await next();
-}]);
-registerTodoModule(parent.group("/first"), first.port());
-registerTodoModule(parent.group("/second"), second.port());
-registerTodoModule(parent.group("/shared"), first.port());
+}], configure: (scope) => {
+  scope.mount(todoModule("/first", first.port()));
+  scope.mount(todoModule("/second", second.port()));
+  scope.mount(todoModule("/shared", first.port()));
+} }] });
+const parent = app.group("/api");
 parent.get("/outside", async () => { throw new TodoInputError("private"); });
 app.get("/health", async (context) => { context.json(200, "{}"); });
 await app.listen(Number(process.argv[2]!));

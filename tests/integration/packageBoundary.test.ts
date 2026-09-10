@@ -15,16 +15,26 @@ function imports(directory: string): string[] {
   });
 }
 
-test("framework owns no application imports and exposes only its public entry", () => {
+test("core and framework have one-way public dependencies", () => {
   for (const specifier of imports(`${root}packages/core/src`)) {
     assert(specifier.startsWith("./") || specifier.startsWith("node:"), `Unexpected framework dependency: ${specifier}`);
   }
+  const frameworkImports = imports(`${root}packages/framework/src`);
+  assert(frameworkImports.includes("@backts/core"));
+  for (const specifier of frameworkImports) assert(specifier === "@backts/core" || specifier.startsWith("./"));
+  const basicImports = imports(`${root}examples/basic/src`);
+  assert(basicImports.includes("@backts/core"));
+  assert(!basicImports.includes("@backts/framework"));
   const requireFromExample = createRequire(`${root}examples/todo/package.json`);
   assert.equal(requireFromExample.resolve("@backts/core"), `${root}packages/core/src/index.ts`);
   assert.throws(() => requireFromExample.resolve("@backts/core/src/http/application"), { code: "ERR_PACKAGE_PATH_NOT_EXPORTED" });
   const exampleImports = imports(`${root}examples/todo/src`);
   assert(exampleImports.includes("@backts/core"));
+  assert(exampleImports.includes("@backts/framework"));
+  assert.equal(requireFromExample.resolve("@backts/framework"), `${root}packages/framework/src/index.ts`);
+  assert.throws(() => requireFromExample.resolve("@backts/framework/src/index"), { code: "ERR_PACKAGE_PATH_NOT_EXPORTED" });
   for (const specifier of exampleImports) {
     assert(!specifier.includes("packages/core") && !specifier.startsWith("@backts/core/"), `Private framework import: ${specifier}`);
+    assert(!specifier.includes("packages/framework") && !specifier.startsWith("@backts/framework/"));
   }
 });

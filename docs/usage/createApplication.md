@@ -34,3 +34,14 @@ app.get("/hello/:name", async (context) => {
 - [路由](routing.md)
 - [业务组织](businessCode.md)
 - [原生编译与测试](testing.md)
+
+## 模板选择
+
+默认 `--template basic` 使用 core 的 createHttpApp，路由用普通函数编写。
+
+```sh
+backts create my-api --template basic --skip-install
+backts create my-service --template framework --skip-install
+```
+
+framework 模板使用 @backts/framework 的 createApplication 和模块声明，提供 Controller/Service 显式工厂示例。两种模板共用构建工具；都不要求装饰器或反射。当前包尚未发布，使用本地包验证安装。

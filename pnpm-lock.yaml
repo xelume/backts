@@ -18,11 +18,24 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  examples/basic:
+    dependencies:
+      '@backts/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      '@backts/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+
   examples/todo:
     dependencies:
       '@backts/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@backts/framework':
+        specifier: workspace:*
+        version: link:../../packages/framework
     devDependencies:
       '@backts/cli':
         specifier: workspace:*
@@ -62,6 +75,12 @@ importers:
       tsdown:
         specifier: 0.23.0
         version: 0.23.0(tsx@4.23.13)(typescript@7.0.2)
+
+  packages/framework:
+    dependencies:
+      '@backts/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

@@ -2,14 +2,14 @@
 
 首次使用请先阅读 [使用文档首页](../../docs/index.md)。本文作为公开 API 与边界参考。
 
-独立的通用 HTTP 框架源码包。公开 Application、RouteGroup、Router、HttpContext、HttpError 与扩展契约，不依赖示例、不包含业务 main.ts、不启动服务。
+独立的 HTTP 基础能力包。公开 createHttpApp、HttpApp 类型、RouteGroup、Router、HttpContext、HttpError 与扩展契约，不依赖示例、不包含业务 main.ts、不启动服务。
 
-所有消费者通过 `@backts/core` 导入；package.json 仅导出根入口 `src/index.ts`，不暴露内部路径。当前 private，不发布 npm。包分发内容限定为 src 与本文档，测试和示例不进入包文件范围。
+所有消费者通过 `@backts/core` 导入；package.json 仅导出根入口 `src/index.ts`，不暴露内部路径。配置为可发布包，当前尚未发布 npm。包分发内容限定为 src 与本文档，测试和示例不进入包文件范围。
 
 ```ts
-import { Application } from "@backts/core";
+import { createHttpApp } from "@backts/core";
 
-const app = new Application();
+const app = createHttpApp();
 app.get("/health", async (context) => {
   context.json(200, JSON.stringify({ status: "ok" }));
 });
@@ -48,7 +48,7 @@ true / 0.0.0.0 会监听所有 IPv4 网卡，包括可能的局域网或公网�
 
 | 能力 | 约定 |
 | --- | --- |
-| `Application(maximumBodyBytes?)` | 默认 16,384 字节；必须为正整数 |
+| `createHttpApp(maximumBodyBytes?)` | 默认 16,384 字节；必须为正整数 |
 | `get/post/put/patch/delete/head/options(path, handler)` | 显式注册；handler 返回 `Promise<void>`，必须发送响应 |
 | `run({ host, port })` | 独立服务入口；监听成功后完成，统一输出启动日志，失败退出码为 1；托管 SIGINT/SIGTERM |
 | `listen({ host, port })` | 成功监听后完成，绑定失败拒绝；port 为 1–65535；应用仅可尝试启动一次 |
@@ -60,7 +60,7 @@ true / 0.0.0.0 会监听所有 IPv4 网卡，包括可能的局域网或公网�
 | `header(name, value)` | 只能在响应提交前设置 |
 | `HttpError(status, message)` | message 可公开给客户端，不应包含秘密或内部错误信息 |
 
-`Router.add/dispatch` 也由源码入口公开；一般应用使用 `Application` 即可。`HttpContext.setParameters` 是 Router 的集成接口，不应由业务处理器覆盖。
+`Router.add/dispatch` 也由源码入口公开；一般应用使用 `createHttpApp()` 即可。`HttpContext.setParameters` 是 Router 的集成接口，不应由业务处理器覆盖。
 
 close() 停止接入新连接，平滑关闭空闲连接，并等待活动响应完成；5 秒后销毁剩余连接。重复调用共享关闭 Promise，整个流程不主动终止进程。响应通过结束回调和连接关闭事件计数，完成后使用 socket.end() 保留发送队列，避免大响应被截断。scriptc 0.0.36 没有提供 closeIdleConnections()/closeAllConnections()，所以连接由框架内部跟踪；server.close 仅支持无参数回调，无法复刻完整 Node 错误回调契约。
 
@@ -132,10 +132,10 @@ URL 解码失败返回 400；点号开头的路径段（包括 `..`、隐藏文�
 
 ## 应用配置与扩展
 
-`new Application()` 和 `new Application(16384)` 保持兼容；也可使用 `ApplicationOptions` 对象。配置在构造时读取，中间件和路由在首次启动尝试时冻结。
+`createHttpApp()` 和 `createHttpApp(16384)` 保持兼容；也可使用 `ApplicationOptions` 对象。配置在构造时读取，中间件和路由在首次启动尝试时冻结。
 
 ```ts
-const app = new Application({
+const app = createHttpApp({
   maximumBodyBytes: 16384,
   logger: false, // 本例演示使用观察回调自行输出日志。
   onError: async (failure, context) => {
@@ -173,7 +173,7 @@ api.get("/items", async (context) => { context.json(200, "[]"); });
 
 ### 路由分组
 
-`app.group(prefix, middleware?)` 返回 RouteGroup，支持与 Application 相同的方法快捷入口、`route()` 和嵌套 `group()`。请通过 app/group 创建分组；构造函数的注册回调属于框架装配契约。
+`app.group(prefix, middleware?)` 返回 RouteGroup，支持与 HttpApp 相同的方法快捷入口、`route()` 和嵌套 `group()`。请通过 app/group 创建分组；构造函数的注册回调属于框架装配契约。
 
 - 组中间件数组在创建时复制；路由数组在注册时复制，之后修改原数组不改变已注册行为。
 - `group("/api/todos").get("", handler)` 对应 `/api/todos`；`.get("/", handler)` 对应 `/api/todos/`。尾斜杠语义保留。
@@ -199,17 +199,17 @@ api.get("/items", async (context) => { context.json(200, "[]"); });
 - durationMs 使用 Date.now 的差值，不作为精密性能基准。回调异常被隔离，不生成额外响应。
 - 此回调不阻塞 HTTP 关闭，也不代表后台任务完成。需要可靠刷新日志/指标时由应用管理对应资源。
 
-HttpServer、ManagedRuntime、RequestPipeline、RequestErrors 均为内部实现，包根入口不导出。现有 Router、HttpContext 集成接口继续保留兼容；业务优先使用 Application。
+HttpServer、ManagedRuntime、RequestPipeline、RequestErrors 均为内部实现，包根入口不导出。现有 Router、HttpContext 集成接口继续保留兼容；业务优先使用 createHttpApp。
 
 ## 日志配置
 
 框架默认提供可读日志，覆盖请求完成、请求错误、监听、关闭和内部错误。无需在 demo 或业务中重复装配。
 
 ```ts
-new Application();
-new Application({ logger: false });
-new Application({ logger: { format: "json", color: false } });
-new Application({ logger: { write: async (event) => {
+createHttpApp();
+createHttpApp({ logger: false });
+createHttpApp({ logger: { format: "json", color: false } });
+createHttpApp({ logger: { write: async (event) => {
   console.log(JSON.stringify(event));
 } } });
 ```
@@ -242,10 +242,10 @@ pretty 日志示例（终端自动着色）：
 ```
 
 ```ts
-new Application(); // 默认开启
-new Application({ logger: { routes: false } }); // 只关闭路由清单
-new Application({ logger: false }); // 关闭全部框架日志
-new Application({ logger: { write: async (event) => {
+createHttpApp(); // 默认开启
+createHttpApp({ logger: { routes: false } }); // 只关闭路由清单
+createHttpApp({ logger: false }); // 关闭全部框架日志
+createHttpApp({ logger: { write: async (event) => {
   if (event.event === "routeMapped" || event.event === "staticMounted") {
     const route = event.route;
     if (route !== undefined) console.log(`${route.method} ${route.path}`);
@@ -261,6 +261,6 @@ JSON 和自定义出口新增 `routeMapped` / `staticMounted` 事件，`route` �
 
 ## 返回结果的处理器
 
-公开 `resultHandler<T>(handle, options)`、`ResultOptions<T>` 与 `ResultTransform<T>`，可作为 Application、RouteGroup 或 Router 的现有 Handler 使用。options 显式指定 status 和 serialize，可提供按顺序执行的异步 transforms；全部成功后调用现有 JSON 响应方法。处理器及转换不得直接响应，异常沿现有请求管线传播。配置创建时复制，旧 Handler API 不变。
+公开 `resultHandler<T>(handle, options)`、`ResultOptions<T>` 与 `ResultTransform<T>`，可作为 HttpApp、RouteGroup 或 Router 的现有 Handler 使用。options 显式指定 status 和 serialize，可提供按顺序执行的异步 transforms；全部成功后调用现有 JSON 响应方法。处理器及转换不得直接响应，异常沿现有请求管线传播。配置创建时复制，旧 Handler API 不变。
 
 完整示例、状态码限制、HEAD 与错误语义见[可选的结果处理](../../docs/usage/requestResponse.md#可选的结果处理)。

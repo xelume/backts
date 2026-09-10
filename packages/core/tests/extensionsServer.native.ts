@@ -1,9 +1,9 @@
-import { Application, type Middleware, type RequestCompletion } from "@backts/core";
+import { createHttpApp, type Middleware, type RequestCompletion } from "@backts/core";
 
 const trace: string[] = [];
 const errors: string[] = [];
 const results: RequestCompletion[] = [];
-const app = new Application({
+const app = createHttpApp({
   maximumBodyBytes: 128,
   onError: async (error, context) => {
     errors.push(context.path);

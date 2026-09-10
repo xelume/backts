@@ -2,7 +2,7 @@
   "name": "@backts/core",
   "version": "0.1.0",
   "type": "module",
-  "description": "BackTS HTTP framework for building native backend services with TypeScript.",
+  "description": "Composable HTTP primitives for native TypeScript backend services.",
   "exports": {
     ".": "./src/index.ts"
   },

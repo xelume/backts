@@ -22,6 +22,8 @@ test("creates an independent application through both entry points and protects 
       const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf8"));
       assert.equal(pkg.name, name);
       assert.equal(pkg.dependencies["@backts/core"], "0.1.0");
+      assert.equal(pkg.dependencies["@backts/framework"], undefined);
+      assert.match(readFileSync(join(target, "src/main.ts"), "utf8"), /createHttpApp/);
       assert.equal(pkg.devDependencies["@backts/cli"], "0.1.0");
       assert.equal(pkg.scripts.dev, "backts dev");
       assert.equal(pkg.scripts.analyze, "backts analyze");

@@ -1,4 +1,4 @@
-export { Application, type ApplicationOptions, type ListenOptions } from "./http/application";
+export { createHttpApp, type Application as HttpApp, type ApplicationOptions, type ListenOptions } from "./http/application";
 export type { ApplicationResource } from "./http/applicationLifecycle";
 export { HttpContext } from "./http/httpContext";
 export { HttpError } from "./http/httpError";

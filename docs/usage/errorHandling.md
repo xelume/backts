@@ -2,7 +2,7 @@
 
 将公开错误映射为 HTTP 响应，并观察请求异常与传输结果。
 
-先准备[应用入口](createApplication.md)。路由示例在启动前注册，Application 配置示例替换入口中的构造配置。
+先准备[应用入口](createApplication.md)。路由示例在启动前注册，createHttpApp 配置示例替换入口中的构造配置。
 
 ## 公开业务错误
 
@@ -21,7 +21,7 @@ app.get("/unavailable", async (_context) => {
 下例替换应用构造位置的配置：
 
 ```ts
-const app = new Application({
+const app = createHttpApp({
   errorHandler: async (failure, context) => {
     context.json(failure.status, JSON.stringify({
       success: false,
@@ -36,7 +36,7 @@ const app = new Application({
 ## 观察回调
 
 ```ts
-const app = new Application({
+const app = createHttpApp({
   onError: async (failure, context) => {
     // 可在此接入应用指标；不要修改 failure 或 context。
   },

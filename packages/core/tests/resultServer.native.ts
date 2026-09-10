@@ -1,8 +1,8 @@
-import { Application, resultHandler, type ResultTransform } from "@backts/core";
+import { createHttpApp, resultHandler, type ResultTransform } from "@backts/core";
 
 interface Value { value: string; }
 const events: string[] = [];
-const app = new Application({ onError: async (_error, context) => { events.push(`error:${context.path}`); } });
+const app = createHttpApp({ onError: async (_error, context) => { events.push(`error:${context.path}`); } });
 app.get("/health", async (context) => { context.json(200, "{}"); });
 app.get("/events", async (context) => { context.json(200, JSON.stringify(events)); });
 app.use(async (context, next) => {

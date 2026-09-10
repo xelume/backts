@@ -137,3 +137,8 @@ export class Application {
   /** 共享关闭 Promise；先排空 HTTP，再等待处理器并逆序释放已注册资源。 */
   close(): Promise<void> { return this.lifecycle.close(); }
 }
+
+/** 创建可直接注册函数处理器的 HTTP 应用，不要求模块或业务类。 */
+export function createHttpApp(options?: number | ApplicationOptions): Application {
+  return new Application(options);
+}

@@ -1,51 +1,40 @@
-# 组织业务代码
+# 选择业务组织方式
 
-随着业务增长，将 HTTP 输入输出、业务规则和存储职责放到各自所属的位置。
+BackTS 支持直接使用基础能力包，或使用上层应用框架。两者共用 HTTP 与资源生命周期实现。
 
-先完成[创建自己的应用](createApplication.md)，再按实际复杂度调整目录。下面以 Todo 的现有结构为参考。
+## 直接使用 core
 
-## 按功能组织目录
-
-可以沿用 Todo 的显式组合方式，按功能组织：
-
-```text
-src/
-  main.ts
-  items/
-    module.ts
-    itemController.ts
-    itemInput.ts
-    itemService.ts
-    itemRepository.ts
-    inMemoryItemRepository.ts
-    errorBoundary.ts
+```ts
+import { createHttpApp } from '@backts/core';
+const app = createHttpApp();
+app.get('/health', async (context) => {
+  context.json(200, '{"status":"ok"}');
+});
+await app.run(3000);
 ```
 
-## 职责划分
+业务可以使用函数、闭包、普通对象或类，core 不要求 Controller/Service/Repository 分层。参考 [Basic 示例](../../examples/basic/src/main.ts)。内部使用类不意味着用户必须定义类。
 
-| 文件或层 | 负责什么 |
-| --- | --- |
-| main | 选择存储实现、管理资源生命周期、装配应用中间件、挂载模块、启动 |
-| module | 接收仓储与路由组，装配 Service/Controller、模块错误边界和 HTTP 映射 |
-| Controller / Input | 请求解析、输入校验、HTTP 响应 |
-| Service | 业务规则，不依赖 HttpContext |
-| Repository 契约 | 业务需要的存储操作 |
-| 存储实现 | 内存、数据库等实际读写 |
-| errorBoundary | 在 HTTP 边界把领域错误映射为 HttpError |
+## 使用 framework
 
-这不是强制目录或基类。只有简单接口时可以直接注册函数；随着业务职责增长再拆分。不要为了调用框架而让所有 Service 继承某个框架类。
+`@backts/framework` 依赖 core，提供 createApplication、ApplicationModule 和 ModuleScope。应用声明模块前缀、中间件与 configure；scope.controller(create, bind) 创建 Controller 并注册路由，scope.mount(module) 挂载子模块，scope.manage(resource) 注册资源。
 
-## 依赖装配与包边界
+```text
+src/main.ts                  创建应用，选择依赖实例并传入模块
+src/todos/module.ts          声明模块，提供 Controller 工厂和 HTTP 映射
+src/todos/todoController.ts  HTTP 与业务转换
+src/todos/todoService.ts     业务规则
+src/todos/todoRepository.ts  业务仓储契约
+```
 
-真实装配参考 [Todo main](../../examples/todo/src/main.ts)，模块入口参考 [registerTodoModule](../../examples/todo/src/todos/module.ts)。Todo 当前使用内存仓储；替换数据库时，应用负责适配器、连接生命周期与所选驱动的 scriptc 兼容验证。
+真实用法参考 [Todo 入口](../../examples/todo/src/main.ts) 和 [Todo 模块](../../examples/todo/src/todos/module.ts)。领域策略仍由应用拥有；框架负责执行装配，而不是包含 Todo 业务。
 
-框架没有自动扫描、装饰器依赖注入或模块容器。跨包依赖使用 `@backts/core` 公开入口；不要相对引用 `packages/core/src`，也不要使用未导出的内部路径。
+工厂显式传入 Service 和仓储，不使用自动扫描或反射注入。类无需继承框架基类，工厂也可返回普通对象。父模块中间件向子模块继承，不修改相邻模块。不同实例隔离，同一仓储由调用方显式共享。
 
-模块入口接收仓储契约和路由组，内部创建 Service、Controller，并通过子组绑定领域错误边界。父组中间件会继承，模块不会修改父组或相邻路由。每次挂载创建独立对象，但数据隔离取决于仓储实例：不同实例隔离，同一实例显式共享。
+configure 和构造函数应只装配对象；外部资源在 manage 的 start 中获取。装配失败抛错，不提供注册回滚。资源顺序、启动失败回滚和关闭期限见[生命周期](applicationLifecycle.md)。
 
-模块是业务自己的普通函数，不管理调用方资源的关闭。注册遵循现有启动冻结与重复路由检查，不提供批量注册失败回滚；多个真实模块出现稳定的重复需求后，再考虑公共装配能力。
+## 包依赖边界
 
-## 相关文档
+轻量应用 → core；框架应用 → framework → core。应用需要 HTTP 类型或结果适配器时也可直接依赖 core。运行时不依赖 CLI；CLI 作为开发工具负责两种应用的原生编译。
 
-- [映射公开错误](errorHandling.md)
-- [验证业务与 HTTP 边界](testing.md)
+跨包只能使用公开入口，禁止导入其他包的私有源码。装饰器是后续可选声明方式，当前未实现。

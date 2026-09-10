@@ -1,4 +1,4 @@
-import { Application, type ApplicationOptions } from "@backts/core";
+import { createHttpApp, type ApplicationOptions } from "@backts/core";
 
 const mode = process.argv[3];
 let errors = 0;
@@ -12,7 +12,7 @@ if (mode === "off") options.logger = false;
 if (mode === "json") options.logger = { format: "json", color: false };
 if (mode === "custom") options.logger = { write: async (event) => { console.log("CUSTOM " + JSON.stringify(event)); } };
 if (mode === "broken") options.logger = { write: async (_event) => { throw new Error("Logger unavailable"); } };
-const app = new Application(options);
+const app = createHttpApp(options);
 app.get("/health", async (context) => { context.json(200, JSON.stringify({ errors, completions })); });
 app.get("/error", async () => { throw new Error("Private failure"); });
 app.group("/api").group("/todos").get("/:id", async (context) => { context.json(200, "{}"); });

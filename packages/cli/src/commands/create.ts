@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, lstatS
 import { basename, join, resolve } from "node:path";
 import { Command, Option } from "commander";
 import { cancel, intro, select, text } from "@clack/prompts";
-import { basicTemplateDirectory, cliVersion } from "../runtime/packageInfo";
+import { basicTemplateDirectory, frameworkTemplateDirectory, cliVersion } from "../runtime/packageInfo";
 import { run } from "../runtime/processes";
 
 interface CreateOptions {
@@ -10,6 +10,7 @@ interface CreateOptions {
   pm?: string;
   skipInstall?: boolean;
   yes?: boolean;
+  template?: string;
 }
 
 export function registerCreateCommand(program: Command, complete: (code: number) => void): void {
@@ -17,6 +18,7 @@ export function registerCreateCommand(program: Command, complete: (code: number)
     .description("Create a basic BackTS application")
     .argument("[directory]", "project directory (prompted in an interactive terminal)")
     .addOption(new Option("--pm <manager>", "package manager (detected from the environment)").choices(["npm", "pnpm"]))
+    .addOption(new Option("--template <template>", "core functions or framework modules").choices(["basic", "framework"]).default("basic"))
     .option("--skip-install", "generate files without installing dependencies")
     .option("-y, --yes", "skip prompts; requires a project directory")
     .action(async (directory: string | undefined, options: CreateOptions) => {
@@ -28,7 +30,7 @@ async function createApplication(options: CreateOptions): Promise<number> {
   const project = await resolveProject(options);
   if (project === null) return 1;
   const { target, pm } = project;
-  writeTemplate(target, pm);
+  writeTemplate(target, pm, options.template ?? "basic");
   console.log(`Created ${target}`);
   if (!options.skipInstall) {
     const status = await installDependencies(target, pm);
@@ -92,7 +94,7 @@ async function resolveProject(options: CreateOptions): Promise<{ target: string;
   return { target: resolve(directory), pm };
 }
 
-function writeTemplate(target: string, pm: string): void {
+function writeTemplate(target: string, pm: string, template: string): void {
   const name = basename(target);
   mkdirSync(target, { recursive: true });
   function copy(source: string, destination: string): void {
@@ -111,7 +113,7 @@ function writeTemplate(target: string, pm: string): void {
       }
     }
   }
-  copy(basicTemplateDirectory, target);
+  copy(template === "framework" ? frameworkTemplateDirectory : basicTemplateDirectory, target);
 }
 
 async function installDependencies(target: string, pm: string): Promise<number> {

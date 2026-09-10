@@ -1,7 +1,7 @@
-import { Application } from "@backts/core";
+import { createHttpApp, type HttpApp } from "@backts/core";
 
 // 仅供 tsc 验证公开重载边界，不执行此模块。
-function checkRejectedCalls(app: Application): void {
+function checkRejectedCalls(app: HttpApp): void {
   // @ts-expect-error 对象配置不能混用位置 host。
   void app.run({ port: 3000 }, true);
   // @ts-expect-error listen 与 run 使用相同的重载约束。

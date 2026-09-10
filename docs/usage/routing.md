@@ -2,7 +2,7 @@
 
 注册 HTTP 接口，组织 URL 前缀，并理解路径冲突、404 和 405 的处理规则。
 
-本页的 `app` 是[应用入口](createApplication.md)中的 Application 实例；所有注册操作放在启动之前。
+本页的 `app` 是[应用入口](createApplication.md)中的 HttpApp 实例；所有注册操作放在启动之前。
 
 ## 注册方法
 
@@ -42,7 +42,7 @@ items.get("/:id", async (context) => {
 
 最终路径为 `/api/items` 与 `/api/items/:id`。组内 `""` 表示前缀本身，`"/"` 表示带尾斜杠的路径。分组共用同一张路由表，所以跨组重复注册同样会报错。
 
-业务通常不需要直接创建 Router。独立使用 Router 时，`describe()` 返回 `{ method, path }[]` 注册快照，不包含处理器；修改快照不会改变路由表。`Application` 不暴露内部 Router 实例；启动时查看清单使用默认日志即可。
+业务通常不需要直接创建 Router。独立使用 Router 时，`describe()` 返回 `{ method, path }[]` 注册快照，不包含处理器；修改快照不会改变路由表。`HttpApp` 不暴露内部 Router 实例；启动时查看清单使用默认日志即可。
 
 ## 相关文档
 

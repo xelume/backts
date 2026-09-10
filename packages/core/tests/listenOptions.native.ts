@@ -1,6 +1,6 @@
-import { Application } from "@backts/core";
+import { createHttpApp } from "@backts/core";
 
-const app = new Application();
+const app = createHttpApp();
 const port = Number(process.argv[2]!);
 const api = process.argv[3]!;
 const form = process.argv[4]!;

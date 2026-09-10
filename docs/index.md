@@ -2,9 +2,9 @@
 
 用 TypeScript 构建原生后端服务。
 
-`@backts/core` 是面向 scriptc 原生编译的 TypeScript HTTP 框架。本文档介绍如何运行示例、创建应用、开发接口，以及测试和分发原生程序。
+BackTS 由不规定业务结构的 `@backts/core` 基础包和可选的 `@backts/framework` 应用框架组成，面向 scriptc 原生编译。本文档介绍如何运行示例、创建应用、开发接口，以及测试和分发原生程序。
 
-当前框架仍处于实验阶段，core、CLI 和创建器已准备包分发，尚未发布到 npm。已验证环境为 macOS ARM64。
+当前框架仍处于实验阶段，core、framework、CLI 和创建器已准备包分发，尚未发布到 npm。已验证环境为 macOS ARM64。
 
 ## 入门
 
@@ -32,7 +32,9 @@
 
 ## 参考文档
 
-- [框架 API](../packages/core/README.md)：公开接口、默认行为与精确契约。
+- [Core API](../packages/core/README.md)：公开接口、默认行为与精确契约。
+- [Framework API](../packages/framework/README.md)：模块和 Controller 装配。
+- [Basic 示例](../examples/basic/README.md)：普通函数处理器。
 - [Todo 示例](../examples/todo/README.md)：示例业务、HTTP 接口与页面功能。
 - [架构设计](architecture.md)：模块职责、依赖方向与扩展边界。
 

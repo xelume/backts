@@ -1,10 +1,10 @@
-import { Application } from "@backts/core";
+import { createHttpApp } from "@backts/core";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
 }
 
-const app = new Application();
+const app = createHttpApp();
 app.get("/inspect", async (context) => {
   context.json(200, JSON.stringify({ url: context.url, tags: context.queryAll("tag"), empty: context.query("empty"), missing: context.query("missing") === undefined, type: context.requestHeader("CONTENT-TYPE") }));
 });

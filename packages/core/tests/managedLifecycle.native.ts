@@ -1,11 +1,11 @@
-import { Application } from "@backts/core";
+import { createHttpApp } from "@backts/core";
 
 const port = Number(process.argv[2]!);
-const survivor = new Application();
+const survivor = createHttpApp();
 // 框架关闭时不得移除其他组件注册的监听器。
 process.on("SIGTERM", () => { void survivor.close(); });
 
-const managed = new Application();
+const managed = createHttpApp();
 await managed.run({ host: "127.0.0.1", port });
 const closing = managed.close();
 if (closing !== managed.close()) throw new Error("Repeated close changed completion");

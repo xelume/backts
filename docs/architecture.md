@@ -1,5 +1,14 @@
 # 架构与扩展边界
 
+## 两层运行时
+
+core 是不规定业务结构的基础能力包，通过 createHttpApp 创建应用，内部 Application 类不再从包根导出。framework 仅依赖 core 公开入口，通过 createApplication 执行模块和 Controller 工厂装配，返回同一个 HttpApp。core 不导入 framework 或业务源码。
+
+examples/basic 直接消费 core；examples/todo 通过 framework 声明模块，领域对象属于示例。CLI 提供 basic/framework 模板，编译规则相同。模块不是包：一个应用或包可以包含多个业务模块。
+
+框架不复制 Router、RequestPipeline、HttpContext 或生命周期。装饰器与反射容器未实现；显式工厂支持类及普通对象，无强制继承。
+
+
 目标是可组合的中小型原生 HTTP 后端框架。core 提供传输、请求处理与扩展契约，业务拥有领域规则和资源依赖。所有应用通过包根入口消费；当前实现基于 scriptc 0.0.36，不承诺 Node API 全量兼容。
 
 ## 请求与生命周期

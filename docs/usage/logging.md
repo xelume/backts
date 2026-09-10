@@ -2,7 +2,7 @@
 
 查看服务启动和请求日志，选择终端、JSON 或自定义日志出口。
 
-以下配置应用于[Application 构造位置](applicationLifecycle.md)，多个配置示例按需要择一或合并。
+以下配置应用于[应用创建位置](applicationLifecycle.md)，多个配置示例按需要择一或合并。
 
 ## 默认输出
 
@@ -22,10 +22,10 @@
 以下是互斥的配置示例：
 
 ```ts
-new Application({ logger: false });
-new Application({ logger: { routes: false } });
-new Application({ logger: { color: false } });
-new Application({ logger: { format: "json" } });
+createHttpApp({ logger: false });
+createHttpApp({ logger: { routes: false } });
+createHttpApp({ logger: { color: false } });
+createHttpApp({ logger: { format: "json" } });
 ```
 
 | 选项 | 效果 |
@@ -58,7 +58,7 @@ const logger: Logger = {
     console.log(JSON.stringify(event));
   },
 };
-const app = new Application({ logger });
+const app = createHttpApp({ logger });
 ```
 
 write 接收结构化事件，必须返回 Promise。抛错和 Promise 拒绝被隔离，不改变请求响应；框架不等待后台日志刷新。可靠投递、批量写入与关闭刷新由应用管理。若同时配置 routes:false，自定义出口也不会收到清单事件。

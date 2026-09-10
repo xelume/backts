@@ -2,32 +2,25 @@
 
 用 TypeScript 构建原生后端服务。BackTS 是面向 scriptc 原生编译的 TypeScript HTTP 框架工作区。**框架是独立库包，Todo 是独立示例消费者。** 当前仍为实验性的 HTTP 内核，不是生产级完整后端平台。
 
-## 项目边界
+## 分层与交付
 
-```text
-packages/core/                 @backts/core
-  package.json                 独立包，仅通过 exports 暴露根入口
-  src/index.ts                 框架公共 API
-  src/http/                    应用装配、请求管线、路由、HTTP 与进程生命周期
-  tests/                       无业务依赖的原生框架契约测试
-examples/todo/                 @backts/example-todo
-  package.json                 显式依赖 @backts/core
-  src/main.ts                  示例启动入口，不是框架入口
-  src/todos/                   Controller、Service、Repository
-  tests/domain.native.ts              示例领域测试
-tests/integration/            TypeScript + Node 驱动的原生集成测试
-packages/cli/                 @backts/cli：创建、原生构建、开发与进程管理
-packages/createBackts/         create-backts：npm create 入口
-```
+| 包 | 职责 | 使用入口 |
+| --- | --- | --- |
+| @backts/core | 不规定业务编程方式的 HTTP、路由、中间件、结果处理与生命周期 | createHttpApp |
+| @backts/framework | 可选模块、Controller 工厂和显式依赖装配 | createApplication |
+| @backts/cli | 创建、原生编译、开发与运行工具 | backts |
+| create-backts | 创建命令入口 | npm create backts |
 
-运行时依赖方向为 `example-todo → @backts/core`；开发工具依赖为 `example-todo → @backts/cli`、`create-backts → @backts/cli`。框架包没有业务源码、业务启动入口或示例依赖。消费者使用 `import { Application } from "@backts/core"`，不跨目录引用框架私有文件。包的 exports 不开放深层路径。领域规则、仓储接口与对象装配由应用拥有，框架不强制任何业务基类。
+依赖方向：framework → core；轻量应用直接消费 core，框架应用消费 framework（HTTP 类型和辅助函数仍来自 core）。运行时不依赖 CLI，CLI 是开发依赖。
 
-框架和示例各有独立 package.json、tsconfig、测试与文档。根 package.json 仅协调工作区命令。原 scriptc-demo 未修改，旧根 src/main.ts 和 Python 脚本已移除。
+examples/basic 展示普通函数处理器；examples/todo 展示框架模块与 Controller/Service。core 内部可以使用类，但用户不需要定义类或继承基类。框架采用显式工厂，不提供反射容器或装饰器。
 
-- [使用文档：入门、开发、验证与分发](docs/index.md)
+本次预发布 API 迁移：从 core 导入 Application 并 new 的旧用法改为 createHttpApp()；应用类型为 HttpApp。框架式应用改用 @backts/framework 的 createApplication({ modules })。两者复用同一 HTTP 与生命周期实现。
+
+- [业务组织与两种入口](docs/usage/businessCode.md)
 - [架构与扩展边界](docs/architecture.md)
-- [框架 API 与生命周期契约](packages/core/README.md)
-- [Todo 示例与接口说明](examples/todo/README.md)
+- [Core API](packages/core/README.md)
+- [Framework API](packages/framework/README.md)
 
 ## 开发命令
 

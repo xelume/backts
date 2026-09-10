@@ -1,6 +1,6 @@
-import { Application } from "@backts/core";
+import { createHttpApp } from "@backts/core";
 
-const app = new Application();
+const app = createHttpApp();
 let active = false;
 app.get("/health", async (context) => { context.json(200, "{}"); });
 app.get("/state", async (context) => { context.json(200, JSON.stringify({ active })); });

@@ -2,7 +2,7 @@
 
 通用开发教程见 [使用文档首页](../../docs/index.md)，本文介绍 Todo 示例的业务与接口。
 
-独立的框架消费者，依赖 `@backts/core: workspace:*`。所有业务源码、启动入口与领域测试均属于本包，不属于框架。
+独立的框架消费者，依赖 `@backts/framework` 与 `@backts/core`。所有业务源码、启动入口与领域测试均属于本包，不属于框架。
 
 ```text
 src/main.ts                 选择仓储、挂载模块、监听及退出
@@ -46,7 +46,7 @@ Todo 为 `{ id: number, title: string, completed: boolean }`。标题去除首�
 
 分发时同时携带可执行文件和 public 目录，并从包含 public 的目录启动；相对路径按进程 cwd 解析，不是按二进制位置解析。框架包中不包含这些示例资源。
 
-`registerTodoModule` 在 `src/todos/module.ts` 中接收入口提供的 `/api/todos` RouteGroup 与仓储契约，内部装配 Service、Controller 和领域错误边界。main.ts 选择仓储实现并拥有资源生命周期。URL 和响应契约不变；不同仓储实例隔离，复用同一仓储时显式共享数据。
+`todoModule` 在 `src/todos/module.ts` 中返回 ApplicationModule，由 framework 执行 Controller 工厂并绑定领域错误边界；入口提供前缀与仓储契约。main.ts 选择仓储实现并拥有资源生命周期。URL 和响应契约不变；不同仓储实例隔离，复用同一仓储时显式共享数据。
 
 ## 查询与页面
 
@@ -69,7 +69,7 @@ curl 'http://localhost:3000/api/todos/1'
 curl 'http://localhost:3000/api/todos' -H 'Content-Type: application/json' -d '{"title":"Study scriptc"}'
 ```
 
-新增接口的开发流程：先在 TodoService 添加规则与领域测试，再在 todoInput.ts 解析外部输入、TodoController 转换结果，最后在 module.ts 注册。领域异常由 errorBoundary.ts 统一映射为 HttpError；module.ts 将该中间件绑定到自身子组，框架自动记录请求完成日志。日志不记录 body、query 或凭证。
+新增接口的开发流程：先在 TodoService 添加规则与领域测试，再在 todoInput.ts 解析外部输入、TodoController 转换结果，最后在 module.ts 注册。领域异常由 errorBoundary.ts 统一映射为 HttpError；模块声明将该中间件绑定到自身作用域，框架自动记录请求完成日志。日志不记录 body、query 或凭证。
 
 查询目前在内存快照上扫描，适合示例规模；持久化或大数据量场景需要仓储查询接口。本轮不修改 core API，也不把 Todo 参数规则放进框架。
 
@@ -99,4 +99,4 @@ pretty 日志示例（终端自动着色）：
 
 框架标识为青色，时间和耗时为暗灰，上下文为黄色；INFO 绿色、WARN 黄色、ERROR 红色。`Application` 表示服务生命周期，`HTTP` 表示请求完成，`Exception` 表示请求错误或内部错误。耗时表示当前请求的耗时；JSON 和自定义出口保留原有事件结构。
 
-启动监听成功后，框架默认列出完整 API 路径（包括 `:id` 参数）及静态资源挂载前缀。main.ts 无需额外装配。使用 `new Application({ logger: { routes: false } })` 只关闭该清单，或通过 `logger.write` 自定义 `routeMapped` / `staticMounted` 事件的输出，详见 [core 日志配置](../../packages/core/README.md#启动路由清单)。
+启动监听成功后，框架默认列出完整 API 路径（包括 `:id` 参数）及静态资源挂载前缀。main.ts 无需额外装配。使用 `createApplication({ modules: [], http: { logger: { routes: false } } })` 只关闭该清单，或通过 `logger.write` 自定义 `routeMapped` / `staticMounted` 事件的输出，详见 [core 日志配置](../../packages/core/README.md#启动路由清单)。
