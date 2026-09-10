@@ -8,14 +8,20 @@ export class ManagedRuntime {
   private shuttingDown = false;
   private shutdownStartedAt = 0;
 
-  constructor(private server: HttpServer, private logger: ApplicationLogger) {}
+  constructor(private server: HttpServer, private logger: ApplicationLogger,
+    private start: (options: ResolvedListenOptions) => Promise<void>, private close: () => Promise<void>) {}
 
   async run(options: ResolvedListenOptions): Promise<void> {
-    await this.server.listen(options);
     const handler = (): void => { void this.shutdown(); };
     this.signalHandler = handler;
     process.on("SIGTERM", handler);
     process.on("SIGINT", handler);
+    try { await this.start(options); }
+    catch (error) {
+      if (this.shuttingDown) return;
+      this.detach();
+      throw error;
+    }
   }
 
   private async shutdown(): Promise<void> {
@@ -28,13 +34,13 @@ export class ManagedRuntime {
     }
     this.shuttingDown = true;
     this.shutdownStartedAt = Date.now();
-    // close() 在 5 秒时销毁剩余连接；仅在底层仍无法完成关闭时才退出进程兜底。
+    // 六秒覆盖启动等待、HTTP 排空和资源清理；超时退出不代表回调已经取消。
     const deadline = setTimeout(() => {
       this.logger.message("internalError", "error", "Server shutdown timed out");
       process.exit(1);
     }, 6000);
     try {
-      await this.server.close();
+      await this.close();
       if (this.server.forced) {
         process.exit(1);
       }

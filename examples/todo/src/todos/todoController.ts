@@ -1,6 +1,7 @@
 import { HttpContext, HttpError } from "@backts/core";
 import { TodoService } from "./todoService";
 import { parseBody, readId, readQuery } from "./todoInput";
+import type { Todo } from "./todoRepository";
 
 /** HTTP 输入与业务结果转换；不保存请求状态，领域错误由路由组边界处理。 */
 export class TodoController {
@@ -12,10 +13,10 @@ export class TodoController {
     context.json(200, JSON.stringify(result.items));
   }
 
-  async get(context: HttpContext): Promise<void> {
+  async get(context: HttpContext): Promise<Todo> {
     const todo = this.service.get(readId(context));
     if (todo === null) throw new HttpError(404, "Todo not found");
-    context.json(200, JSON.stringify(todo));
+    return todo;
   }
 
   async create(context: HttpContext): Promise<void> {

@@ -32,12 +32,14 @@ export class HttpServer {
   private server: Server | null = null;
   private closing: Promise<void> | null = null;
   private started = false;
+  private listening = false;
+  private activeHandlers = 0;
+  private handlersFinished: (() => void) | null = null;
 
   constructor(
     private maximumBodyBytes: number,
     private handle: Handler,
     private errors: RequestErrors,
-    private onClosed: () => void,
     private onListening: () => void,
     private logger: ApplicationLogger,
     private observer?: CompletionObserver,
@@ -45,6 +47,12 @@ export class HttpServer {
 
   get forced(): boolean { return this.connections.forced; }
   forceClose(): void { this.connections.forceClose(); }
+
+  /** 停止 HTTP 接入后等待业务处理结束；断连或响应提交不会取消处理函数。 */
+  waitForHandlers(): Promise<void> {
+    if (this.activeHandlers === 0) return Promise.resolve();
+    return new Promise((resolve) => { this.handlersFinished = resolve; });
+  }
 
   private async observe(result: RequestCompletion): Promise<void> {
     this.logger.complete(result);
@@ -58,6 +66,7 @@ export class HttpServer {
     if (this.started) throw new Error("Application already started");
     this.started = true;
     const server = createServer(async (request, response) => {
+      this.activeHandlers += 1;
       const release = this.connections.begin(request.socket);
       const startedAt = Date.now();
       const method = request.method ?? "GET";
@@ -88,6 +97,13 @@ export class HttpServer {
           this.logger.message("internalError", "error", "Failed to send error response");
           request.socket.destroy();
         }
+      } finally {
+        this.activeHandlers -= 1;
+        if (this.activeHandlers === 0) {
+          const resolve = this.handlersFinished;
+          this.handlersFinished = null;
+          if (resolve !== null) resolve();
+        }
       }
     });
     server.on("connection", (socket) => { this.connections.track(socket); });
@@ -101,6 +117,7 @@ export class HttpServer {
       });
       server.listen(options.port, options.host, () => {
         listening = true;
+        this.listening = true;
         this.logger.message("listening", "info", `Listening on http://${options.host}:${options.port}`);
         this.onListening();
         resolve();
@@ -112,13 +129,14 @@ export class HttpServer {
     const closing = this.closing;
     if (closing !== null) return closing;
     const server = this.server;
-    if (server === null) return Promise.resolve();
+    // scriptc 的未监听 Server.close 不保证调用回调；绑定失败时没有连接需要排空。
+    if (server === null || !this.listening) return Promise.resolve();
     const result = new Promise<void>((resolve) => {
       this.logger.message("closing", "info", "Shutting down; waiting up to 5 seconds for connections");
       const deadline = setTimeout(() => { this.logger.message("shutdownTimeout", "error", "Server shutdown timed out"); this.connections.forceClose(); }, 5000);
       server.close(() => {
         clearTimeout(deadline);
-        this.onClosed();
+        this.listening = false;
         this.logger.message("closed", "info", "Server closed");
         resolve();
       });

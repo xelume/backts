@@ -42,7 +42,9 @@ test("independent Todo consumer preserves its HTTP contracts", async () => {
     const duplicate = spawnSync(`${root}examples/todo/.scriptc/app`, [String(port)], { cwd: `${root}examples/todo`, timeout: 5000 });
     assert.ifError(duplicate.error);
     assert.notEqual(duplicate.status, 0, "Port conflict must fail startup");
-    assert.match(duplicate.stderr.toString(), /Server startup failed/);
+    const failure = JSON.parse(duplicate.stderr.toString());
+    assert.equal(failure.event, "startupFailed");
+    assert.match(failure.message, /EADDRINUSE/);
     await new Promise<void>((resolve, reject) => {
       const socket = connect(port, "127.0.0.1", () => {
         socket.write("POST /api/todos HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{", () => socket.destroy());

@@ -6,9 +6,11 @@
 
 ```mermaid
 flowchart TD
-  App[Application 装配门面] --> Server[HttpServer]
+  App[Application 装配门面] --> Lifecycle[ApplicationLifecycle]
+  Lifecycle --> Resources[显式资源 start/close]
+  Lifecycle --> Server[HttpServer]
   App --> Runtime[ManagedRuntime]
-  Runtime --> Server
+  Runtime --> Lifecycle
   Server --> Connections[HttpConnections]
   Server --> Context[每请求 HttpContext]
   Server --> Global[全局 RequestPipeline]
@@ -24,9 +26,9 @@ flowchart TD
 
 实际终端分派由 Application 装配：先尝试 Router，仅没有匹配路径才尝试 StaticFiles。业务 404、405 或异常均不回退静态服务。
 
-启动时 Application 冻结注册配置。HttpServer 创建监听、跟踪连接、调用处理链、捕获错误和观察响应结束。`listen()` 不注册进程信号；`run()` 由 ManagedRuntime 添加 SIGINT/SIGTERM 托管。HTTP 关闭完成后，经装配回调移除本实例信号监听，HttpServer 不依赖进程托管模块。
+启动时 Application 冻结注册配置，ApplicationLifecycle 按注册顺序初始化资源后调用 HttpServer。HttpServer 创建监听、跟踪连接、调用处理链、捕获错误和观察响应结束。`listen()` 不注册进程信号；`run()` 由 ManagedRuntime 在初始化前添加 SIGINT/SIGTERM 托管。完整应用关闭后，经装配回调移除本实例信号监听，HttpServer 不依赖进程托管模块。
 
-关闭继续使用已有的五秒连接排空、六秒进程兜底及重复信号策略。响应完成与业务函数完成是两个不同事件；连接关闭不隐含业务取消。当前不管理数据库、队列或日志后台任务的关闭。
+关闭继续使用已有的五秒连接排空、六秒进程兜底及重复信号策略。响应完成与业务函数完成是两个不同事件；连接关闭不隐含业务取消。显式通过 manage 注册资源时，HTTP 排空后还会等待处理函数结束，再逆序释放资源；后台任务由资源所有者自行协调。
 
 ## 采用的设计模式
 
@@ -46,6 +48,7 @@ flowchart TD
 | 文件 | 所有权与职责 |
 | --- | --- |
 | `packages/core/src/http/application.ts` | 配置、冻结、装配、公开注册入口 |
+| `applicationLifecycle.ts` | 资源启动顺序、失败回滚、启动中关闭与完整关闭结果 |
 | `requestPipeline.ts` | 中间件顺序和 next 生命周期，执行状态按请求分配 |
 | `routeGroup.ts` | 注册时组合前缀与中间件，内部不匹配请求 |
 | `router.ts` | 路由形状、优先级、方法与参数匹配 |
@@ -55,10 +58,10 @@ flowchart TD
 | `requestErrors.ts` | 默认错误映射的呈现、自定义响应与观察回调隔离 |
 | `httpConnections.ts` | 连接所有权和活动响应计数 |
 | `staticFiles.ts` | 静态路径防护和文件响应 |
-| `examples/todo/src/todos/registerRoutes.ts` | Todo 自身的 HTTP 路由映射 |
+| `examples/todo/src/todos/module.ts` | Todo 依赖装配、领域错误边界与 HTTP 路由映射 |
 | `packages/cli/src/native/compiler.ts` | 仅开发环境使用的 TS7 源码图整理与编译调用 |
 
-HttpServer、ManagedRuntime、RequestPipeline、RequestErrors 没有从包根导出。现有 Router、HttpContext 集成方法保留兼容，应用优先使用 Application 和 RouteGroup。未为了隐藏历史 API 引入新的接口层或破坏迁移。
+HttpServer、ApplicationLifecycle、ManagedRuntime、RequestPipeline、RequestErrors 没有从包根导出。现有 Router、HttpContext 集成方法保留兼容，应用优先使用 Application 和 RouteGroup。未为了隐藏历史 API 引入新的接口层或破坏迁移。
 
 ## 稳定契约
 
@@ -84,9 +87,11 @@ API 示例与字段语义见 [core README](../packages/core/README.md)。
 | 超时与取消 | HttpServer / HttpContext | 定时器实际执行、取消传播、单次响应与连接收尾 |
 | SSE、流式文件 | HttpContext 与传输生命周期 | 背压、断连、完成事件、关闭排空 |
 | 持久化、事务 | 应用 Service 与 Repository | 驱动静态编译、事务和业务一致性 |
-| 外部资源启动/关闭 | 应用装配与生命周期 | 顺序、部分启动失败回滚、幂等清理与期限 |
+| 外部资源适配 | 应用通过 manage 注册 start/close | 驱动静态编译、部分初始化清理、后台任务与自身超时 |
 
 这些是后续归属说明，不代表已经实现对应功能。遇到多个真实消费者且语义稳定后，再提取可选包；core 不依赖应用源码。
+
+资源管理协议已实现于 ApplicationLifecycle；数据库和队列适配器仍由应用提供。resourceLifecycle.native.ts 与 resources.test.ts 验证注册快照、顺序、失败回滚、重复关闭、启动中信号、响应后业务等待、清理失败与进程期限。嵌入式 close 没有新增回调超时，详见生命周期使用文档。
 
 ## 验证与兼容性
 
@@ -103,3 +108,9 @@ scriptc 对跨 unknown 参数的自定义异常判断有限制，所以在传输
 `@backts/core` 只交付框架 TS 源码。`@backts/cli` 交付 Node 可执行 JS、原生编译适配和内置 basic 模板；固定依赖 scriptc 与 TypeScript 的已验证版本。`create-backts` 通过 CLI 根导出的 `runCli()` 实现创建入口，不复制模板或生成逻辑。CLI 不导入示例或 core 私有源码，模板应用通过 `@backts/core` 的 exports 导入框架。
 
 原生测试发现与准备由 CLI 的 `native/tests.ts` 拥有，公开入口为 `@backts/cli/testing`。根 package.json 直接使用 pnpm 递归命令，无自定义任务编排。模板目前无需独立包或生成插件协议。
+
+## 可选结果适配层
+
+`http/resultHandler.ts` 由 core 拥有，将类型化结果处理器适配为已有 Handler。它在处理成功后依次转换、显式序列化和发送 JSON，不新增请求管线或路由注册机制。转换阶段保持结果类型，响应结构包装由序列化函数拥有。所有步骤的异常进入原有错误边界，响应完成仍由 HttpServer 观察。
+
+Todo 的单项读取接口使用此适配器；Controller 返回 Todo，注册函数拥有 HTTP 状态和序列化。其他接口、CLI 模板和直接响应 API 保持原样。`resultServer.native.ts` 与 `results.test.ts` 验证原生结果转换、配置快照、并发隔离、短路、HEAD、错误恢复和禁止重复发送。

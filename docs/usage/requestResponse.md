@@ -110,3 +110,32 @@ app.get("/text", async (context) => {
 - [配置请求体大小上限](applicationLifecycle.md)
 - [中间件读取请求体的限制](middleware.md)
 
+
+## 可选的结果处理
+
+需要在发送前转换结果时，用 `resultHandler()` 将返回值处理器适配到现有路由。原有直接调用 `context.json()` 的方式保持不变。
+
+```ts
+import { resultHandler } from "@backts/core";
+
+app.get("/message", resultHandler(async () => ({ message: "hello" }), {
+  status: 200,
+  transforms: [async (result, context) => {
+    context.header("x-result", "transformed");
+    return { message: result.message.toUpperCase() };
+  }],
+  serialize: (result) => JSON.stringify({ data: result }),
+}));
+```
+
+执行顺序为：现有中间件进入 → 处理器返回结果 → transforms 按数组顺序执行 → serialize → 发送 JSON → 中间件返回。转换保持结果类型；需要包装为不同响应结构时在 serialize 中完成。serialize 必须返回有效 JSON 文本，框架不再次解析验证内容，也不自动反射业务对象。
+
+status 必须显式指定，接受 200–599，排除 204、205、304；非法值在创建适配器时抛错。无内容和流式响应继续使用原有处理器。HEAD 需要显式注册，执行完整处理和序列化，但不发送正文。
+
+配置字段与转换数组在创建适配器时复制，回调闭包的外部状态仍由应用管理。每次请求的结果独立保存；同一适配器可用于多个路由或路由组。现有中间件短路时不会执行结果处理器。
+
+处理器和转换可以读取请求、设置响应头，但不得直接发送响应。若误用已经发送，适配器报告错误并停止后续阶段，不会撤销已发送的内容或再次响应。处理、转换、序列化异常交给现有中间件 catch 或应用错误边界；不会自动回滚业务副作用。发送前设置的响应头遵循现有错误处理契约，不会自动回滚。
+
+这不是全局拦截器或取消机制。响应完成统计继续使用 onRequestComplete，不能使用中间件返回时间代替。
+
+scriptc 0.0.36 兼容限制：仅抛错的异步回调应显式标注 `Promise<结果类型>`，不要依赖推断出的 `Promise<never>`。本轮原生验证中，后者在转换异常路径触发了未处理拒绝并导致进程退出，显式返回类型的相同场景通过。此限制不是取消错误传播；已标注回调的错误仍由原有边界处理。

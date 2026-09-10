@@ -5,7 +5,8 @@
 独立的框架消费者，依赖 `@backts/core: workspace:*`。所有业务源码、启动入口与领域测试均属于本包，不属于框架。
 
 ```text
-src/main.ts                 创建对象、注册路由、监听及退出
+src/main.ts                 选择仓储、挂载模块、监听及退出
+src/todos/module.ts         装配 Service/Controller、路由与领域错误边界
 src/todos/todoController.ts HTTP 与业务转换
 src/todos/todoService.ts    业务规则
 src/todos/todoRepository.ts 业务拥有的存储契约
@@ -45,7 +46,7 @@ Todo 为 `{ id: number, title: string, completed: boolean }`。标题去除首�
 
 分发时同时携带可执行文件和 public 目录，并从包含 public 的目录启动；相对路径按进程 cwd 解析，不是按二进制位置解析。框架包中不包含这些示例资源。
 
-路由由 `src/todos/registerRoutes.ts` 注册到入口提供的 `/api/todos` RouteGroup；仓储、Service 与 Controller 继续在 main.ts 显式装配。分组迁移不改变现有 URL 或响应契约。
+`registerTodoModule` 在 `src/todos/module.ts` 中接收入口提供的 `/api/todos` RouteGroup 与仓储契约，内部装配 Service、Controller 和领域错误边界。main.ts 选择仓储实现并拥有资源生命周期。URL 和响应契约不变；不同仓储实例隔离，复用同一仓储时显式共享数据。
 
 ## 查询与页面
 
@@ -68,7 +69,7 @@ curl 'http://localhost:3000/api/todos/1'
 curl 'http://localhost:3000/api/todos' -H 'Content-Type: application/json' -d '{"title":"Study scriptc"}'
 ```
 
-新增接口的开发流程：先在 TodoService 添加规则与领域测试，再在 todoInput.ts 解析外部输入、TodoController 转换结果，最后在 registerRoutes.ts 注册。领域异常由 errorBoundary.ts 统一映射为 HttpError；main.ts 装配该组中间件，框架自动记录请求完成日志。日志不记录 body、query 或凭证。
+新增接口的开发流程：先在 TodoService 添加规则与领域测试，再在 todoInput.ts 解析外部输入、TodoController 转换结果，最后在 module.ts 注册。领域异常由 errorBoundary.ts 统一映射为 HttpError；module.ts 将该中间件绑定到自身子组，框架自动记录请求完成日志。日志不记录 body、query 或凭证。
 
 查询目前在内存快照上扫描，适合示例规模；持久化或大数据量场景需要仓储查询接口。本轮不修改 core API，也不把 Todo 参数规则放进框架。
 

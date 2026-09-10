@@ -9,6 +9,7 @@ import { RequestErrors, type ErrorHandler, type ErrorObserver } from "./requestE
 import { RequestPipeline, type Middleware } from "./requestPipeline";
 import { RouteGroup } from "./routeGroup";
 import { resolveListenOptions, type ListenOptions } from "./listenOptions";
+import { ApplicationLifecycle, type ApplicationResource } from "./applicationLifecycle";
 
 export type { ListenOptions } from "./listenOptions";
 
@@ -31,6 +32,7 @@ export class Application {
   private runtime: ManagedRuntime;
   private started = false;
   private logger: ApplicationLogger;
+  private lifecycle: ApplicationLifecycle;
 
   constructor(input: number | ApplicationOptions = 16_384) {
     const options: ApplicationOptions = typeof input === "number" ? { maximumBodyBytes: input } : input;
@@ -38,8 +40,9 @@ export class Application {
     if (!Number.isInteger(maximumBodyBytes) || maximumBodyBytes < 1) throw new Error("Invalid body limit");
     this.logger = new ApplicationLogger(options.logger);
     this.server = new HttpServer(maximumBodyBytes, (context) => this.dispatch(context),
-      new RequestErrors(this.logger, options.errorHandler, options.onError), () => { this.runtime.detach(); }, () => { this.logRoutes(); }, this.logger, options.onRequestComplete);
-    this.runtime = new ManagedRuntime(this.server, this.logger);
+      new RequestErrors(this.logger, options.errorHandler, options.onError), () => { this.logRoutes(); }, this.logger, options.onRequestComplete);
+    this.lifecycle = new ApplicationLifecycle(this.server, this.logger, () => { this.runtime.detach(); });
+    this.runtime = new ManagedRuntime(this.server, this.logger, (options) => this.lifecycle.start(options), () => this.lifecycle.close());
   }
 
   private logRoutes(): void {
@@ -55,6 +58,14 @@ export class Application {
   use(middleware: Middleware): void {
     this.assertConfigurable();
     this.middleware.push(middleware);
+  }
+
+  /** 注册资源生命周期；按顺序启动、逆序释放，只能在启动前调用。
+   * 回调在注册时固定；依赖实例仍由业务显式注入，不提供容器解析。
+   */
+  manage(resource: ApplicationResource): void {
+    this.assertConfigurable();
+    this.lifecycle.add(resource);
   }
 
   /** 方法规范化为大写；路由中间件在路径参数设置后执行。 */
@@ -120,9 +131,9 @@ export class Application {
   listen(input: number | ListenOptions, host?: string | boolean): Promise<void> {
     const options = resolveListenOptions(input, host);
     this.freeze();
-    return this.server.listen(options);
+    return this.lifecycle.start(options);
   }
 
-  /** 重复调用共享关闭 Promise；排空响应，5 秒后销毁剩余连接。 */
-  close(): Promise<void> { return this.server.close(); }
+  /** 共享关闭 Promise；先排空 HTTP，再等待处理器并逆序释放已注册资源。 */
+  close(): Promise<void> { return this.lifecycle.close(); }
 }

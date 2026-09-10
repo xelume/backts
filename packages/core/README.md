@@ -18,6 +18,8 @@ await app.run(3000);
 
 框架采用组合，不要求业务继承 Controller 或 Service。业务依赖注入、仓储及持久化由消费者自行定义。
 
+`app.manage(resource)` 可显式托管外部资源，公开类型为 `ApplicationResource`：name、start、close。资源顺序初始化后才监听，失败逆序回滚；关闭先排空 HTTP，有资源时等待处理函数结束，再逆序清理。close 回调必须支持部分初始化失败，单个清理失败不阻止其余清理。完整契约和嵌入式超时边界见[显式管理资源](../../docs/usage/applicationLifecycle.md#显式管理资源)。
+
 ## 构建与验证
 
 包以 TypeScript 源码交付，`typecheck` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。当前 scriptc 0.0.36 无法直接静态编译此框架的裸包导入；CLI 通过 `@backts/cli/compiler` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。独立应用通过 `backts build` 使用此能力；包尚未发布 npm。
@@ -62,7 +64,7 @@ true / 0.0.0.0 会监听所有 IPv4 网卡，包括可能的局域网或公网�
 
 close() 停止接入新连接，平滑关闭空闲连接，并等待活动响应完成；5 秒后销毁剩余连接。重复调用共享关闭 Promise，整个流程不主动终止进程。响应通过结束回调和连接关闭事件计数，完成后使用 socket.end() 保留发送队列，避免大响应被截断。scriptc 0.0.36 没有提供 closeIdleConnections()/closeAllConnections()，所以连接由框架内部跟踪；server.close 仅支持无参数回调，无法复刻完整 Node 错误回调契约。
 
-只有 run() 托管 SIGINT/SIGTERM，建议每进程仅使用一个。首次信号调用上述 close()；正常关闭不强制退出，其他资源仍由其所有者负责。连接超时销毁后记录超时并以状态码 1 退出；若底层关闭回调仍不完成，第 6 秒执行最终退出兜底。首次信号后的 250ms 内合并重复转发，避免 pnpm 把一次 Ctrl+C 转发多次；窗口后再次收到信号立即销毁连接并以状态码 1 退出，可能中断请求。正常关闭清除定时器，仅移除实例自身的信号回调。listen()/close() 不主动注册信号或接管进程退出。集成测试覆盖空闲连接、大响应完整发送、客户端中断、未完成请求以及 pnpm 进程组残留。
+只有 run() 托管 SIGINT/SIGTERM，建议每进程仅使用一个。首次信号调用完整 close()；正常关闭不强制退出，未通过 manage 注册的资源仍由其所有者负责。连接强制关闭或资源清理失败以状态码 1 退出；第 6 秒的最终退出兜底覆盖初始化等待、HTTP 排空和资源释放。首次信号后的 250ms 内合并重复转发，避免 pnpm 把一次 Ctrl+C 转发多次；窗口后再次收到信号立即销毁连接并以状态码 1 退出，可能中断请求或清理。正常关闭清除定时器，仅移除实例自身的信号回调。listen()/close() 不主动注册信号或接管进程退出。集成测试覆盖空闲连接、大响应完整发送、客户端中断、未完成请求以及 pnpm 进程组残留。
 
 ### 路由规则
 
@@ -256,3 +258,9 @@ new Application({ logger: { write: async (event) => {
 JSON 和自定义出口新增 `routeMapped` / `staticMounted` 事件，`route` 为独立的 `RouteInfo { method, path }` 快照，其余事件字段不变。`routes: false` 会阻止这两种事件发送到任何出口；`logger: false` 优先关闭所有事件。写入回调仍遵守既有异常隔离和异步刷新契约。启动失败不会输出路由清单。
 
 公开 `Router.describe()` 返回注册顺序的独立快照，修改快照不影响路由匹配；处理器不包含在快照中。
+
+## 返回结果的处理器
+
+公开 `resultHandler<T>(handle, options)`、`ResultOptions<T>` 与 `ResultTransform<T>`，可作为 Application、RouteGroup 或 Router 的现有 Handler 使用。options 显式指定 status 和 serialize，可提供按顺序执行的异步 transforms；全部成功后调用现有 JSON 响应方法。处理器及转换不得直接响应，异常沿现有请求管线传播。配置创建时复制，旧 Handler API 不变。
+
+完整示例、状态码限制、HEAD 与错误语义见[可选的结果处理](../../docs/usage/requestResponse.md#可选的结果处理)。
