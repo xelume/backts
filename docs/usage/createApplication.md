@@ -10,7 +10,7 @@ cd my-api
 npm run dev
 ```
 
-本地开发时，安装工作区依赖并构建 CLI 后执行：
+仓库贡献者若需验证本地 CLI，在仓库根目录安装依赖并构建 CLI 后执行（生成应用的依赖仍来自私库，并非自动链接工作区源码）：
 
 ```sh
 pnpm --filter @backts/cli build
@@ -42,8 +42,10 @@ app.get("/hello/:name", async (context) => {
 显式指定 `--template` 会跳过模板选择。使用 `--yes`、CI 或非交互环境时，未指定模板默认使用 basic。
 
 ```sh
-backts create my-api --template basic
-backts create my-service --template framework
+npm create backts@latest --registry=https://registry.qlqs.work/ -- my-api --template basic --yes
+npm create backts@latest --registry=https://registry.qlqs.work/ -- my-service --template framework --yes
 ```
 
 framework 模板使用 @backts/framework 的 createApplication 和模块声明，提供直接返回业务结果的函数式接口示例。两种模板共用构建工具；都不要求装饰器或反射。模板已配置所需的 core/framework 依赖。
+
+Framework 项目继续阅读 [Framework 入门](framework.md)，按模块添加接口、配置 HTTP 选项并测试依赖替换。

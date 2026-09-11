@@ -4,6 +4,8 @@
 
 以下配置应用于[应用创建位置](applicationLifecycle.md)，多个配置示例按需要择一或合并。
 
+Framework 应用将相同 HTTP 选项放在 `createApplication({ module: AppModule, http: options })` 的 `http` 字段，见[配置对照](framework.md#与-core-共用-http-能力)。
+
 ## 默认输出
 
 ```text

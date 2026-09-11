@@ -78,4 +78,4 @@ start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；�
 
 ## 框架模板
 
-使用 `backts create my-app --template framework` 生成框架式应用；默认 basic 使用普通函数处理器。创建时自动生成私库配置并安装依赖。framework 模板包含 `@backts/framework` 和 `@backts/core` 依赖。
+使用[创建应用](createApplication.md#模板选择)中的完整创建命令生成框架式应用；已有 CLI 命令环境也可执行 `backts create my-app --template framework`。默认 basic 使用普通函数处理器。创建时自动生成私库配置并安装依赖。framework 模板包含 `@backts/framework` 和 `@backts/core` 依赖。

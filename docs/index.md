@@ -6,12 +6,20 @@ BackTS 由不规定业务结构的 `@backts/core` 基础包和可选的 `@backts
 
 当前框架仍处于实验阶段，安装方式和命令说明见 [CLI 文档](usage/cli.md)。已验证环境为 macOS ARM64。
 
-## 入门
+## 创建和开发应用
 
-- [CLI：创建、开发与构建](usage/cli.md)
+无需克隆本仓库，按以下顺序阅读：
 
-- [环境与运行](usage/gettingStarted.md)：准备工具链，运行 Todo 示例并验证接口。
-- [创建自己的应用](usage/createApplication.md)：通过 CLI 创建独立应用，编译并启动第一个服务。
+1. [环境要求](usage/gettingStarted.md#环境要求)与[私库配置](usage/cli.md#私有-npm-仓库配置)。
+2. [创建自己的应用](usage/createApplication.md)：选择模板并验证第一个接口。
+3. Basic 应用继续阅读路由和请求响应指南；Framework 应用先读 [Framework 入门](usage/framework.md)。
+4. [检查与测试](usage/testing.md)，然后[构建分发](usage/distribution.md)。
+
+[CLI 参考](usage/cli.md)提供完整命令与参数。
+
+## 开发本仓库
+
+已经取得源码的贡献者从[运行仓库示例](usage/gettingStarted.md#运行仓库示例)开始，再阅读[架构](architecture.md)和[发布流程](releasing.md)。应用命令在生成项目目录执行，仓库命令在 `backts/` 执行。
 
 ## 开发指南
 
@@ -40,6 +48,12 @@ BackTS 由不规定业务结构的 `@backts/core` 基础包和可选的 `@backts
 
 ## 示例约定
 
-除非单独注明，命令在 `backts/` 目录执行，源码路径也以该目录为基准。
+使用指南中的应用命令和 `src/`、`tests/` 路径以生成的应用目录为基准；仓库示例与维护命令会单独注明工作目录。
 
 功能示例沿用[创建自己的应用](usage/createApplication.md)中的 `app` 实例，路由和中间件在启动前注册。构造和启动配置按需替换，不要对同一实例重复启动。
+
+## 文档维护
+
+README 负责定位与入口；使用指南负责完成读者任务；包 README 负责公开 API 契约；架构和评估文档记录实现决策及历史证据。细节优先链接到所属文档，避免多处复制。
+
+修改 API、默认值、CLI、模板或工具链的维护者，应同步检查相关指南和两个模板 README。新增教程示例需完成类型检查、原生构建及对应行为验证；链接检查同时考虑仓库和发布包阅读场景。历史评估应标注日期、适用版本和已解决项，不能把旧测试结果当作当前验证。

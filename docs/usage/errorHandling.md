@@ -4,6 +4,8 @@
 
 先准备[应用入口](createApplication.md)。路由示例在启动前注册，createHttpApp 配置示例替换入口中的构造配置。
 
+Framework 应用将相同 HTTP 选项放在 `createApplication({ module: AppModule, http: options })` 的 `http` 字段，见[配置对照](framework.md#与-core-共用-http-能力)。
+
 ## 公开业务错误
 
 ```ts

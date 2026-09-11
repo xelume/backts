@@ -12,6 +12,35 @@
 
 `start` 使用已有二进制，需要先执行 `build`。`analyze` 表示静态可编译性，不表示运行时测试覆盖率。使用 pnpm 的项目可将上述 `npm run` 替换为 `pnpm run`。
 
+## 编写第一个原生测试
+
+本例沿用 [Framework 入门](framework.md)中的 `src/greetings/service.ts`。在应用目录创建 `tests/greetingService.native.ts`：
+
+```ts
+import { GreetingService } from "../src/greetings/service";
+
+const service = new GreetingService("Hello");
+if (service.greet("  Ada  ") !== "Hello, Ada") {
+  throw new Error("Greeting must trim the name");
+}
+let rejected = false;
+try { service.greet("   "); } catch { rejected = true; }
+if (!rejected) throw new Error("Blank names must be rejected");
+console.log("PASS greeting service");
+```
+
+运行：
+
+```sh
+npm exec -- backts analyze --tests
+npm exec -- backts build --tests
+./.scriptc/greetingService
+```
+
+预期输出 `PASS greeting service`，退出码为 0；断言失败会抛错并非零退出。构建成功后还必须执行产物，不能把编译成功当作测试通过。Basic 应用也可按相同文件命名和命令测试自己的业务函数，不要求引入 framework。
+
+[Framework 依赖替换测试](framework.md#用替换依赖验证接口)提供完整的原生测试服务与 Node HTTP 断言。测试服务需要等待启动、从外部发送请求并在结束后关闭；不要像无服务器的领域测试一样等待它自行退出。
+
 ## 原生测试入口
 
 `backts build --tests` 递归发现当前包的 tests/**/*.native.ts，以默认最多 2 个任务并发构建到 .scriptc/<文件名>。`backts analyze --tests` 分析同一组入口。`--tests` 不能和 --entry/--out 混用；单应用分析使用 `backts analyze`。

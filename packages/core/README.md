@@ -1,6 +1,8 @@
 # @backts/core
 
-首次使用请先阅读 [使用文档首页](../../docs/index.md)。本文作为公开 API 与边界参考。
+[开发版使用文档](https://github.com/xelume/backts/blob/main/docs/index.md)跟随 main 更新；使用已发布版本时，请在仓库中切换到对应发布 tag 或提交后阅读。访问仓库需要相应权限。
+
+本文作为公开 API 与边界参考，首次使用请从上方使用文档开始。
 
 独立的 HTTP 基础能力包。公开 createHttpApp、HttpApp 类型、RouteGroup、Router、HttpContext、HttpError 与扩展契约，不依赖示例、不包含业务 main.ts、不启动服务。
 
@@ -18,7 +20,7 @@ await app.run(3000);
 
 框架采用组合，不要求业务继承 Controller 或 Service。业务依赖注入、仓储及持久化由消费者自行定义。
 
-`app.manage(resource)` 可显式托管外部资源，公开类型为 `ApplicationResource`：name、start、close。资源顺序初始化后才监听，失败逆序回滚；关闭先排空 HTTP，有资源时等待处理函数结束，再逆序清理。close 回调必须支持部分初始化失败，单个清理失败不阻止其余清理。完整契约和嵌入式超时边界见[显式管理资源](../../docs/usage/applicationLifecycle.md#显式管理资源)。
+`app.manage(resource)` 可显式托管外部资源，公开类型为 `ApplicationResource`：name、start、close。资源顺序初始化后才监听，失败逆序回滚；关闭先排空 HTTP，有资源时等待处理函数结束，再逆序清理。close 回调必须支持部分初始化失败，单个清理失败不阻止其余清理。完整契约和嵌入式超时边界见[显式管理资源](https://github.com/xelume/backts/blob/main/docs/usage/applicationLifecycle.md#显式管理资源)。
 
 ## 构建与验证
 
@@ -262,6 +264,6 @@ JSON 和自定义出口新增 `routeMapped` / `staticMounted` 事件，`route` �
 
 ## 返回结果的处理器
 
-公开 `resultHandler<T>(handle, options)`、`ResultOptions<T>` 与 `ResultTransform<T>`，可作为 HttpApp、RouteGroup 或 Router 的现有 Handler 使用。options 显式指定 status 和 serialize，可提供按顺序执行的异步 transforms；全部成功后调用现有 JSON 响应方法。处理器及转换不得直接响应，异常沿现有请求管线传播。配置创建时复制，旧 Handler API 不变。
+公开 `resultHandler<T>(handle, options)`、`ResultOptions<T>` 与 `ResultTransform<T>`，可作为 HttpApp、RouteGroup 或 Router 的现有 Handler 使用。options 显式指定 status 和 serialize，可提供按顺序执行的异步 transforms；可选 emptyStatus 允许 undefined 结果发送空响应，省略时保持严格 JSON 契约；全部成功后调用现有 JSON 响应方法。处理器及转换不得直接响应，异常沿现有请求管线传播。配置创建时复制，旧 Handler API 不变。
 
-完整示例、状态码限制、HEAD 与错误语义见[可选的结果处理](../../docs/usage/requestResponse.md#可选的结果处理)。
+完整示例、状态码限制、HEAD 与错误语义见[可选的结果处理](https://github.com/xelume/backts/blob/main/docs/usage/requestResponse.md#可选的结果处理)。

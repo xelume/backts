@@ -1,5 +1,7 @@
 # @backts/framework
 
+[开发版使用文档](https://github.com/xelume/backts/blob/main/docs/index.md)跟随 main 更新；使用已发布版本时，请在仓库中切换到对应发布 tag 或提交后阅读。访问仓库需要相应权限。
+
 可选的应用框架，依赖 @backts/core 公开入口。提供具名模块树、函数式接口和依赖装配；HTTP、结果处理、日志及资源生命周期仍由 core 拥有。
 
 ```ts
@@ -31,7 +33,7 @@ const TodoModule = defineModule({
 });
 ```
 
-上例还需从 `@backts/framework` 导入 `factoryProvider` 和类型 `RoutesOptions`，并提供应用自己的仓储和 Service。框架负责依赖解析、实例复用和隔离；业务决定依赖关系与输入校验。完整用法见 examples/todo 和 CLI framework 模板。
+上例还需从 `@backts/framework` 导入 `factoryProvider` 和类型 `RoutesOptions`，并提供应用自己的仓储和 Service。框架负责依赖解析、实例复用和隔离；业务决定依赖关系与输入校验。完整教程见 [Framework 入门](https://github.com/xelume/backts/blob/main/docs/usage/framework.md)，更完整的业务参考 [Todo 示例](https://github.com/xelume/backts/blob/main/examples/todo/README.md)。
 
 ## 模块契约
 

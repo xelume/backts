@@ -1,5 +1,7 @@
 # create-backts
 
+[开发版使用文档](https://github.com/xelume/backts/blob/main/docs/index.md)跟随 main 更新；使用已发布版本时，请在仓库中切换到对应发布 tag 或提交后阅读。访问仓库需要相应权限。
+
 BackTS 应用创建入口，复用 @backts/cli，不包含第二套模板或创建逻辑。
 
 纳入源码管理的 bin.mjs 是安装时的稳定命令入口，加载 dist/bin.mjs。src/bin.ts 通过 tsdown 构建为 dist/bin.mjs，调用 CLI 公开 API。prepack 检查类型并构建，发布包安装后即可运行。

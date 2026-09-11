@@ -10,7 +10,7 @@
 | --- | --- |
 | 修改代码后没有效果 | start 不构建，先 build 再重启 |
 | 裸包导入能通过 tsc，但 scriptc 失败 | 使用`backts build`，检查源码是否通过公开 exports 导入 |
-| 新增 example 没被根 check 检查 | 根命令目前显式指定 core 与 Todo，新包先运行自己的命令 |
+| 新增 example 没被根 check 检查 | 检查包是否匹配 pnpm-workspace.yaml，以及是否声明 typecheck、build、analyze、test:build 等脚本；根任务递归执行包脚本，Node 测试另由根 test 的文件模式发现 |
 | 启动失败并提示 EADDRINUSE | 日志包含被占用的监听地址；停止占用进程或修改应用端口，框架不会自动换端口。嵌入式 listen 的拒绝错误也包含此提示 |
 | 端口非法导致启动失败 | 端口必须是 1–65535 的整数 |
 | Request body already read | 中间件与 handler 是否重复或交叉读取 body |
@@ -29,7 +29,7 @@
 
 当前已提供 HTTP 路由、路径与查询参数、请求体读取、显式响应、中间件、路由分组、错误映射、日志、静态资源和 HTTP 关闭管理。
 
-尚未提供内置认证授权、CORS 中间件、schema 验证器、ORM、事务、配置容器、反射注入和请求级依赖作用域、WebSocket、SSE/通用流式响应、TLS、限流、完整请求超时、OpenAPI 生成、热重载或日志可靠投递。不要把启动路由清单理解为 OpenAPI 文档或接口健康检查。
+尚未提供内置认证授权、CORS 中间件、schema 验证器、ORM、事务、配置容器、反射注入和请求级依赖作用域、WebSocket、SSE/通用流式响应、TLS、限流、完整请求超时、OpenAPI 生成、进程内 HMR 或日志可靠投递。`backts dev` 已支持源码变化后重新编译和重启。不要把启动路由清单理解为 OpenAPI 文档或接口健康检查。
 
 新功能优先通过应用组合实现；涉及第三方驱动与新运行时能力时，以原生编译和实际请求测试为准。
 

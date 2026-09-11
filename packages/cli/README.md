@@ -1,5 +1,7 @@
 # @backts/cli
 
+[开发版使用文档](https://github.com/xelume/backts/blob/main/docs/index.md)跟随 main 更新；使用已发布版本时，请在仓库中切换到对应发布 tag 或提交后阅读。访问仓库需要相应权限。
+
 BackTS 的 Node 24+ 开发工具。提供 create、dev、build、start、analyze、doctor。应用仍通过 scriptc 编译为原生程序。需要 clang 与平台 SDK，当前支持环境为 macOS ARM64，其他平台不保证兼容。
 
 ```sh
@@ -55,7 +57,7 @@ dev 监听项目目录中的 TS/JSON 变动，忽略 node_modules、.git、.scri
 
 包内交付 dist 和模板，安装后直接运行，tsdown 仅是开发依赖。模板随包版本固定，不在运行时下载远程模板。TypeScript AST 接口属于 unstable，升级固定工具链版本时必须重新验证原生编译。
 
-模板不保存 package.json。构建时从各包的版本声明生成 dist/projectVersions.json，create 使用这份清单统一生成应用 package.json。应用初始版本为 0.1.0，BackTS 与工具链直接依赖使用清单中的精确版本。升级依赖后重新构建和发布 CLI，无需修改模板。发布检查和创建入口的关联规则见[版本与发布](../../docs/releasing.md)。
+模板不保存 package.json。构建时从各包的版本声明生成 dist/projectVersions.json，create 使用这份清单统一生成应用 package.json。应用初始版本为 0.1.0，BackTS 与工具链直接依赖使用清单中的精确版本。升级依赖后重新构建和发布 CLI，无需修改模板。发布检查和创建入口的关联规则见[版本与发布](https://github.com/xelume/backts/blob/main/docs/releasing.md)。
 
 `backts coverage` 是 `backts analyze` 的兼容别名。`backts analyze --tests` 分析当前包 tests/**/*.native.ts，`backts build --tests` 编译这些入口到 .scriptc/<文件名>，不执行它们。--tests 不与 --entry/--out 混用。入口按路径排序，忽略普通 TS 文件和符号链接，缺少入口或输出重名会失败，首个失败停止派发新任务，等待已启动任务结束后返回失败；并发时诊断按任务完成顺序输出。
 

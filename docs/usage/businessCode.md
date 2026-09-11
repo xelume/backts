@@ -17,6 +17,8 @@ await app.run(3000);
 
 ## 使用 framework
 
+首次使用先按 [Framework 入门](framework.md)完成一个模块、Service 和依赖替换测试；本节用于查阅组织边界。
+
 `@backts/framework` 依赖 core，提供 createApplication、defineModule 和 ModuleScope。AppModule 是唯一根入口，TodoModule 等功能模块通过 imports 声明；模块用 providers 声明 factoryProvider，用 controllers 注册 controller，用 exports 公开依赖。简单接口无需 provider 或业务类。框架负责装配；scope.controller/manage/configure 保留给高级用法。
 
 ```text

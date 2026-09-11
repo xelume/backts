@@ -4,6 +4,8 @@
 
 先按[创建自己的应用](createApplication.md)准备入口；本页构造和启动示例是替换方案，不应在同一实例上连续启动。
 
+Framework 应用将相同 HTTP 选项放在 `createApplication({ module: AppModule, http: options })` 的 `http` 字段，见[配置对照](framework.md#与-core-共用-http-能力)。
+
 ## 应用选项
 
 ```ts
