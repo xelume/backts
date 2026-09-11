@@ -7,6 +7,8 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const cli = fileURLToPath(new URL("../../packages/cli/dist/bin.mjs", import.meta.url));
+const coreVersion = JSON.parse(readFileSync(new URL("../../packages/core/package.json", import.meta.url), "utf8")).version;
+const cliVersion = JSON.parse(readFileSync(new URL("../../packages/cli/package.json", import.meta.url), "utf8")).version;
 const initializer = fileURLToPath(new URL("../../packages/createBackts/dist/bin.mjs", import.meta.url));
 function invoke(args: string[], cwd: string, bin = cli) {
   return spawnSync(process.execPath, [bin, ...args], { cwd, encoding: "utf8", timeout: 15000 });
@@ -21,10 +23,10 @@ test("creates an independent application through both entry points and protects 
       const target = join(cwd, name);
       const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf8"));
       assert.equal(pkg.name, name);
-      assert.equal(pkg.dependencies["@backts/core"], "0.0.3");
+      assert.equal(pkg.dependencies["@backts/core"], coreVersion);
       assert.equal(pkg.dependencies["@backts/framework"], undefined);
       assert.match(readFileSync(join(target, "src/main.ts"), "utf8"), /createHttpApp/);
-      assert.equal(pkg.devDependencies["@backts/cli"], "0.0.3");
+      assert.equal(pkg.devDependencies["@backts/cli"], cliVersion);
       assert.equal(pkg.scripts.dev, "backts dev");
       assert.equal(pkg.scripts.analyze, "backts analyze");
       assert.equal(pkg.scripts.coverage, undefined);
@@ -52,7 +54,7 @@ test("invalid commands and unattended input fail before writing files", () => {
       assert.deepEqual(readdirSync(cwd), []);
     }
     assert.equal(invoke(["--help"], cwd).status, 0);
-    assert.match(invoke(["--version"], cwd).stdout, /^0\.0\.3/);
+    assert.equal(invoke(["--version"], cwd).stdout.trim(), cliVersion);
     assert.notEqual(invoke(["start"], cwd).status, 0);
   } finally { rmSync(cwd, { recursive: true, force: true }); }
 });

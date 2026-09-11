@@ -114,7 +114,7 @@ scriptc 对跨 unknown 参数的自定义异常判断有限制，所以在传输
 
 ## CLI 包边界
 
-`@backts/core` 只交付框架 TS 源码。`@backts/cli` 交付 Node 可执行 JS、原生编译适配和内置 basic 模板；固定依赖 scriptc 与 TypeScript 的已验证版本。`create-backts` 通过 CLI 根导出的 `runCli()` 实现创建入口，不复制模板或生成逻辑。CLI 不导入示例或 core 私有源码，模板应用通过 `@backts/core` 的 exports 导入框架。
+`@backts/core` 只交付框架 TS 源码。`@backts/cli` 交付 Node 可执行 JS、原生编译适配、basic/framework 模板和构建时生成的依赖版本清单；固定依赖 scriptc 与 TypeScript 的已验证版本。CLI 的 creation 模块统一生成应用 package.json，模板不维护版本。构建读取各包的公开包元数据，安装后的 CLI 只使用自身发布产物。`create-backts` 通过 CLI 根导出的 `runCli()` 实现创建入口，不复制模板或生成逻辑。CLI 不导入示例或 core 私有源码，模板应用通过 `@backts/core` 的 exports 导入框架。发布关联与检查见[版本与发布](releasing.md)。
 
 原生测试发现与准备由 CLI 的 `native/tests.ts` 拥有，公开入口为 `@backts/cli/testing`。根 package.json 直接使用 pnpm 递归命令，无自定义任务编排。模板目前无需独立包或生成插件协议。
 

@@ -19,6 +19,7 @@ examples/basic 展示普通函数处理器；examples/todo 展示框架模块、
 
 - [业务组织与两种入口](docs/usage/businessCode.md)
 - [架构与扩展边界](docs/architecture.md)
+- [版本与发布](docs/releasing.md)
 - [Core API](packages/core/README.md)
 - [Framework API](packages/framework/README.md)
 

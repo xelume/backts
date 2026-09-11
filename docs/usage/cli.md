@@ -35,7 +35,7 @@ basic 和 framework 模板自带以下 `.npmrc` 配置，创建后会自动安�
 生成的应用包括：
 
 ```text
-package.json       普通版本依赖；不包含 workspace 协议
+package.json       CLI 根据随包版本清单生成的精确依赖；不包含 workspace 协议
 src/main.ts        / 和 /health 路由
 tsconfig.json     独立配置（无仓库继承）
 .gitignore

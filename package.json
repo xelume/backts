@@ -13,10 +13,17 @@
     "analyze": "pnpm -r --if-present analyze",
     "test": "pnpm -r --if-present test:build && node --test tests/cli/*.test.ts tests/integration/*.test.ts",
     "check": "pnpm build && pnpm typecheck && pnpm analyze && pnpm test",
-    "coverage": "pnpm analyze"
+    "coverage": "pnpm analyze",
+    "release:check": "pnpm check && node scripts/checkProjectVersions.ts && pnpm pack:check",
+    "changeset": "changeset",
+    "changeset:check": "node scripts/checkChangesets.ts",
+    "version-packages": "pnpm changeset:check && pnpm changeset version",
+    "pack:check": "pnpm --recursive --workspace-concurrency=1 --filter './packages/*' --if-present run pack:dry-run",
+    "release": "node scripts/releasePackages.ts"
   },
   "devDependencies": {
     "@backts/cli": "workspace:*",
+    "@changesets/cli": "^3.0.2",
     "@types/node": "26.4.0",
     "typescript": "7.0.2"
   }

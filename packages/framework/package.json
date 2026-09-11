@@ -12,7 +12,8 @@
     "README.md"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pack:dry-run": "pnpm pack --dry-run"
   },
   "dependencies": {
     "@backts/core": "workspace:*"

@@ -22,6 +22,7 @@ CLI 使用 Commander 注册命令，入口组装 `src/commands` 中的命令模�
 
 ```text
 tsdown.config.ts                 构建命令入口、公开 API 和类型声明
+build/projectVersions.ts         构建时读取各包与工具链元数据
 dist/                            发布的 Node ESM 产物
 src/
   bin.ts                         可执行入口
@@ -32,6 +33,9 @@ src/
     buildAndAnalyze.ts
     start.ts
     doctor.ts
+  creation/
+    projectPackage.ts            两个模板共用的项目清单生成器
+    projectVersions.ts           发布依赖清单的内部契约
   native/
     compiler.ts                  原生编译
     tests.ts                     原生测试发现与准备
@@ -49,6 +53,8 @@ dev 监听项目目录中的 TS/JSON 变动，忽略 node_modules、.git、.scri
 公开 Node API：根导出 `runCli(argv): Promise<number>`，由调用者设置退出码；`@backts/cli/compiler` 导出 `compileNative({operation, entry, output?, cwd?}): Promise<number>`，仅支持 build/coverage，build 要求 output。输入、输出相对于应用 cwd；读取公开 exports 的静态 TS 模块图，将临时文件放入应用 .scriptc/inputs，输出诊断并返回退出码。解析或启动异常会抛出。相同应用入口的调用应串行，不支持动态 import、require、任意 JS npm 包或 tsconfig paths。
 
 包内交付 dist 和模板，安装后直接运行，tsdown 仅是开发依赖。模板随包版本固定，不在运行时下载远程模板。TypeScript AST 接口属于 unstable，升级固定工具链版本时必须重新验证原生编译。
+
+模板不保存 package.json。构建时从各包的版本声明生成 dist/projectVersions.json，create 使用这份清单统一生成应用 package.json。应用初始版本为 0.1.0，BackTS 与工具链直接依赖使用清单中的精确版本。升级依赖后重新构建和发布 CLI，无需修改模板。发布检查和创建入口的关联规则见[版本与发布](../../docs/releasing.md)。
 
 `backts coverage` 是 `backts analyze` 的兼容别名。`backts analyze --tests` 分析当前包 tests/**/*.native.ts，`backts build --tests` 编译这些入口到 .scriptc/<文件名>，不执行它们。--tests 不与 --entry/--out 混用。入口按路径排序，忽略普通 TS 文件和符号链接，缺少入口或输出重名会失败，首个编译失败终止后续工作。
 

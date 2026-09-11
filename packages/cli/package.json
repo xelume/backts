@@ -34,7 +34,8 @@
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepack": "pnpm typecheck && pnpm build"
+    "prepack": "pnpm typecheck && pnpm build",
+    "pack:dry-run": "pnpm pack --dry-run"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.0",

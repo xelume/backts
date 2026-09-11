@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, lstatS
 import { basename, join, resolve } from "node:path";
 import { Command, Option } from "commander";
 import { cancel, intro, select, text } from "@clack/prompts";
-import { basicTemplateDirectory, frameworkTemplateDirectory, cliVersion } from "../runtime/packageInfo";
+import { basicTemplateDirectory, frameworkTemplateDirectory, readBundledProjectVersions } from "../runtime/packageInfo";
+import { createProjectPackage } from "../creation/projectPackage";
 import { run } from "../runtime/processes";
 
 interface CreateOptions {
@@ -112,24 +113,25 @@ async function resolveProject(options: CreateOptions): Promise<{ target: string;
 
 function writeTemplate(target: string, pm: string, template: string): void {
   const name = basename(target);
+  const projectPackage = createProjectPackage(name, template, readBundledProjectVersions());
   mkdirSync(target, { recursive: true });
   function copy(source: string, destination: string): void {
     for (const item of readdirSync(source, { withFileTypes: true })) {
       const from = join(source, item.name);
-      const to = join(destination, item.name === "gitignore" || item.name === "npmrc" ? `.${item.name}` : item.name === "package.json.template" ? "package.json" : item.name);
+      const to = join(destination, item.name === "gitignore" || item.name === "npmrc" ? `.${item.name}` : item.name);
       if (item.isDirectory()) {
         mkdirSync(to);
         copy(from, to);
       } else {
         const content = readFileSync(from, "utf8")
           .replaceAll("__PROJECT_NAME__", name)
-          .replaceAll("__CLI_VERSION__", cliVersion)
           .replaceAll("__PM__", pm);
         writeFileSync(to, content, { flag: "wx" });
       }
     }
   }
   copy(template === "framework" ? frameworkTemplateDirectory : basicTemplateDirectory, target);
+  writeFileSync(join(target, "package.json"), JSON.stringify(projectPackage, null, 2) + "\n", { flag: "wx" });
 }
 
 async function installDependencies(target: string, pm: string): Promise<number> {

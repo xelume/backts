@@ -13,7 +13,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "analyze": "backts analyze --tests",
-    "test:build": "backts build --tests"
+    "test:build": "backts build --tests",
+    "pack:dry-run": "pnpm pack --dry-run"
   },
   "publishConfig": {
     "registry": "https://registry.qlqs.work/"
