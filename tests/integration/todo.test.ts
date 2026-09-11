@@ -39,7 +39,10 @@ test("independent Todo consumer preserves its HTTP contracts", async () => {
     assert.equal((await expect(port, "DELETE", "/api/todos/1", 204)).body, "");
     await expect(port, "DELETE", "/api/todos/1", 404);
     assert.deepEqual(JSON.parse((await expect(port, "GET", "/api/todos", 200)).body), []);
-    const duplicate = spawnSync(`${root}examples/todo/.scriptc/app`, [String(port)], { cwd: `${root}examples/todo`, timeout: 5000 });
+    const duplicate = spawnSync(`${root}examples/todo/.scriptc/app`, [String(port)], {
+      cwd: `${root}examples/todo`, timeout: 5000,
+      env: { ...process.env, LOG_FORMAT: "json" },
+    });
     assert.ifError(duplicate.error);
     assert.notEqual(duplicate.status, 0, "Port conflict must fail startup");
     const failure = JSON.parse(duplicate.stderr.toString());
