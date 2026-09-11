@@ -4,7 +4,7 @@
 
 独立的 HTTP 基础能力包。公开 createHttpApp、HttpApp 类型、RouteGroup、Router、HttpContext、HttpError 与扩展契约，不依赖示例、不包含业务 main.ts、不启动服务。
 
-所有消费者通过 `@backts/core` 导入；package.json 仅导出根入口 `src/index.ts`，不暴露内部路径。配置为可发布包，当前尚未发布 npm。包分发内容限定为 src 与本文档，测试和示例不进入包文件范围。
+所有消费者通过 `@backts/core` 导入；package.json 仅导出根入口 `src/index.ts`，不暴露内部路径。包通过私有 npm 仓库安装，地址为 `https://registry.qlqs.work/`，消费环境需配置 `@backts:registry` 和私库认证。包分发内容限定为 src 与本文档，测试和示例不进入包文件范围。
 
 ```ts
 import { createHttpApp } from "@backts/core";
@@ -22,7 +22,7 @@ await app.run(3000);
 
 ## 构建与验证
 
-包以 TypeScript 源码交付，`typecheck` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。当前 scriptc 0.0.36 无法直接静态编译此框架的裸包导入；CLI 通过 `@backts/cli/compiler` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。独立应用通过 `backts build` 使用此能力；包尚未发布 npm。
+包以 TypeScript 源码交付，`typecheck` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。scriptc 0.0.36 无法直接静态编译此框架的裸包导入；CLI 通过 `@backts/cli/compiler` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。独立应用通过 `backts build` 使用此能力。
 
 `tests/httpServer.native.ts` 仅包含框架契约测试路由，通过公开包入口创建应用；不导入 Todo。`tests/compatibility.native.ts` 为类与生命周期探针。
 
@@ -115,9 +115,9 @@ URL 解码失败返回 400；点号开头的路径段（包括 `..`、隐藏文�
 
 新增响应方法：`HttpContext.bytes(status, contentType, buffer)` 发送原始字节；`emptyFile(contentType, length)` 用于静态 HEAD；`redirect(path)` 用于同站点绝对路径重定向。它们保留单次响应约束。`Router.tryDispatch(context)` 仅在没有匹配路径时返回 false，原 dispatch 的 404/405 行为保持兼容。
 
-进程组回归测试目前依赖 POSIX 信号语义，与已验证的 macOS 运行环境一致，不代表 Windows 退出行为已验证。
+进程关闭使用 POSIX 信号语义，不保证 Windows 兼容性。
 
-## 请求 API（0.0.36 工具链验证）
+## 请求 API
 
 - `context.url`：原始请求目标，保留 query 和编码；`path` 继续仅用于路径匹配。
 - `requestHeader(name)`：请求头名称大小写不敏感；缺失返回 undefined，多值数组按逗号加空格连接。原 `header(name, value)` 继续设置响应头。

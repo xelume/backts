@@ -4,11 +4,11 @@
 
 BackTS 由不规定业务结构的 `@backts/core` 基础包和可选的 `@backts/framework` 应用框架组成，面向 scriptc 原生编译。本文档介绍如何运行示例、创建应用、开发接口，以及测试和分发原生程序。
 
-当前框架仍处于实验阶段，core、framework、CLI 和创建器已准备包分发，尚未发布到 npm。已验证环境为 macOS ARM64。
+当前框架仍处于实验阶段，安装方式和命令说明见 [CLI 文档](usage/cli.md)。已验证环境为 macOS ARM64。
 
 ## 入门
 
-- [CLI：创建、开发与打包验收](usage/cli.md)
+- [CLI：创建、开发与构建](usage/cli.md)
 
 - [环境与运行](usage/gettingStarted.md)：准备工具链，运行 Todo 示例并验证接口。
 - [创建自己的应用](usage/createApplication.md)：通过 CLI 创建独立应用，编译并启动第一个服务。

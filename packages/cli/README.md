@@ -1,6 +1,6 @@
 # @backts/cli
 
-BackTS 的 Node 24+ 开发工具。提供 create、dev、build、start、analyze、doctor。应用仍通过 scriptc 编译为原生程序。需要 clang 与平台 SDK，目前验收环境为 macOS ARM64。
+BackTS 的 Node 24+ 开发工具。提供 create、dev、build、start、analyze、doctor。应用仍通过 scriptc 编译为原生程序。需要 clang 与平台 SDK，当前支持环境为 macOS ARM64，其他平台不保证兼容。
 
 ```sh
 backts create my-api --pm npm
@@ -14,7 +14,7 @@ backts doctor
 
 create 支持 --pm npm|pnpm、--skip-install、--yes；非交互环境必须给出目录，默认检测 npm/pnpm。拒绝非空目录和目标符号链接。默认安装跳过依赖脚本，失败保留已创建项目。
 
-交互终端通过 Clack 输入并校验目录、选择包管理器；取消返回退出码 1，不创建文件。`--yes`、CI 和非交互环境跳过提示。使用 `backts <command> --help` 或 `backts help <command>` 查看每个命令的选项和默认值。
+交互终端通过 Clack 输入并校验目录、选择模板和包管理器；取消返回退出码 1，不创建文件。显式传入 `--template basic|framework` 时跳过模板选择。`--yes`、CI 和非交互环境跳过提示，未指定模板时使用 basic。使用 `backts <command> --help` 或 `backts help <command>` 查看每个命令的选项和默认值。
 
 CLI 使用 Commander 注册命令，入口组装 `src/commands` 中的命令模块；创建交互使用 `@clack/prompts`。这些依赖不进入 core 或原生应用。
 

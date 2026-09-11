@@ -21,10 +21,10 @@ test("creates an independent application through both entry points and protects 
       const target = join(cwd, name);
       const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf8"));
       assert.equal(pkg.name, name);
-      assert.equal(pkg.dependencies["@backts/core"], "0.1.0");
+      assert.equal(pkg.dependencies["@backts/core"], "0.0.1");
       assert.equal(pkg.dependencies["@backts/framework"], undefined);
       assert.match(readFileSync(join(target, "src/main.ts"), "utf8"), /createHttpApp/);
-      assert.equal(pkg.devDependencies["@backts/cli"], "0.1.0");
+      assert.equal(pkg.devDependencies["@backts/cli"], "0.0.2");
       assert.equal(pkg.scripts.dev, "backts dev");
       assert.equal(pkg.scripts.analyze, "backts analyze");
       assert.equal(pkg.scripts.coverage, undefined);
@@ -52,7 +52,7 @@ test("invalid commands and unattended input fail before writing files", () => {
       assert.deepEqual(readdirSync(cwd), []);
     }
     assert.equal(invoke(["--help"], cwd).status, 0);
-    assert.match(invoke(["--version"], cwd).stdout, /^0\.1\.0/);
+    assert.match(invoke(["--version"], cwd).stdout, /^0\.0\.2/);
     assert.notEqual(invoke(["start"], cwd).status, 0);
   } finally { rmSync(cwd, { recursive: true, force: true }); }
 });
@@ -102,6 +102,32 @@ test("public runCli handles repeated invocations without exiting its caller", as
   assert.equal(await runCli(["--version"]), 0);
   await assert.rejects(runCli(["unknown"]), /unknown command/);
   assert.equal(await runCli(["--version"]), 0);
+});
+
+test("both templates configure the private registry before automatic installation", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "backts-registry-"));
+  try {
+    const commands = join(cwd, "bin");
+    mkdirSync(commands);
+    for (const pm of ["npm", "pnpm"]) {
+      writeFileSync(join(commands, pm), `#!${process.execPath}
+import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
+assert.equal(readFileSync(".npmrc", "utf8"), "@backts:registry=https://registry.qlqs.work/\\n");
+assert.deepEqual(process.argv.slice(2), ["install", "--ignore-scripts"]);
+writeFileSync("installed.txt", "ok");
+`, { mode: 0o755 });
+      for (const template of ["basic", "framework"]) {
+        const name = `${pm}-${template}`;
+        const result = spawnSync(process.execPath, [cli, "create", name, "--template", template, "--pm", pm, "--yes"], {
+          cwd, encoding: "utf8", timeout: 15000, env: { ...process.env, PATH: `${commands}:${process.env["PATH"] ?? ""}` },
+        });
+        assert.equal(result.status, 0, result.stderr);
+        assert.equal(readFileSync(join(cwd, name, "installed.txt"), "utf8"), "ok");
+        assert(!readdirSync(join(cwd, name)).includes("npmrc"));
+      }
+    }
+  } finally { rmSync(cwd, { recursive: true, force: true }); }
 });
 
 test("installation failure returns the package manager status and keeps a recoverable project", () => {

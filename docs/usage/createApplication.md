@@ -2,22 +2,22 @@
 
 使用 [BackTS CLI](cli.md) 创建独立应用。模板包含 src/main.ts、独立 TypeScript 配置、npm 依赖和开发脚本，不要求新项目位于本仓库。
 
-包发布后的入口：
+私库的创建入口（认证要求见 [CLI 文档](cli.md#私有-npm-仓库配置)）：
 
 ```sh
-npm create backts@latest my-api
+npm create backts@latest --registry=https://registry.qlqs.work/ -- my-api --yes
 cd my-api
 npm run dev
 ```
 
-当前尚未发布 npm，安装工作区依赖并构建 CLI 后执行：
+本地开发时，安装工作区依赖并构建 CLI 后执行：
 
 ```sh
 pnpm --filter @backts/cli build
-pnpm exec backts create /tmp/my-api --skip-install
+pnpm exec backts create /tmp/my-api
 ```
 
-发布前需按 CLI 文档安装本地 tarball，普通 registry 安装目前不可用。创建文件完成不等于依赖已安装。
+模板会生成 `.npmrc` 并自动安装依赖。私库认证使用用户级 npm 配置或 CI 环境；需要仅生成文件时可传入 `--skip-install`。
 
 默认入口注册 `/` 与 `/health` 并监听 localhost:3000。新增路由写在 app.run() 之前：
 
@@ -37,11 +37,13 @@ app.get("/hello/:name", async (context) => {
 
 ## 模板选择
 
-默认 `--template basic` 使用 core 的 createHttpApp，路由用普通函数编写。
+交互终端中省略 `--template` 会显示模板选择：Basic（默认）使用 core 的 createHttpApp，路由用普通函数编写；Framework 使用模块、Controller 和 Service。可用方向键选择并按 Enter 确认。
+
+显式指定 `--template` 会跳过模板选择。使用 `--yes`、CI 或非交互环境时，未指定模板默认使用 basic。
 
 ```sh
-backts create my-api --template basic --skip-install
-backts create my-service --template framework --skip-install
+backts create my-api --template basic
+backts create my-service --template framework
 ```
 
-framework 模板使用 @backts/framework 的 createApplication 和模块声明，提供 Controller/Service 显式工厂示例。两种模板共用构建工具；都不要求装饰器或反射。当前包尚未发布，使用本地包验证安装。
+framework 模板使用 @backts/framework 的 createApplication 和模块声明，提供 Controller/Service 显式工厂示例。两种模板共用构建工具；都不要求装饰器或反射。模板已配置所需的 core/framework 依赖。

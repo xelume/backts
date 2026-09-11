@@ -15,10 +15,10 @@ interface CreateOptions {
 
 export function registerCreateCommand(program: Command, complete: (code: number) => void): void {
   program.command("create")
-    .description("Create a basic BackTS application")
+    .description("Create a BackTS application")
     .argument("[directory]", "project directory (prompted in an interactive terminal)")
     .addOption(new Option("--pm <manager>", "package manager (detected from the environment)").choices(["npm", "pnpm"]))
-    .addOption(new Option("--template <template>", "core functions or framework modules").choices(["basic", "framework"]).default("basic"))
+    .addOption(new Option("--template <template>", "core functions or framework modules (prompted interactively; otherwise basic)").choices(["basic", "framework"]))
     .option("--skip-install", "generate files without installing dependencies")
     .option("-y, --yes", "skip prompts; requires a project directory")
     .action(async (directory: string | undefined, options: CreateOptions) => {
@@ -29,8 +29,8 @@ export function registerCreateCommand(program: Command, complete: (code: number)
 async function createApplication(options: CreateOptions): Promise<number> {
   const project = await resolveProject(options);
   if (project === null) return 1;
-  const { target, pm } = project;
-  writeTemplate(target, pm, options.template ?? "basic");
+  const { target, pm, template } = project;
+  writeTemplate(target, pm, template);
   console.log(`Created ${target}`);
   if (!options.skipInstall) {
     const status = await installDependencies(target, pm);
@@ -52,8 +52,9 @@ function directoryIssue(directory: string): string | undefined {
   return undefined;
 }
 
-async function resolveProject(options: CreateOptions): Promise<{ target: string; pm: string } | null> {
+async function resolveProject(options: CreateOptions): Promise<{ target: string; pm: string; template: string } | null> {
   let directory = options.directory;
+  let template = options.template ?? "basic";
   let pm = options.pm ?? (process.env["npm_config_user_agent"]?.startsWith("pnpm/") ? "pnpm" : "npm");
   if (pm !== "npm" && pm !== "pnpm") throw new Error("Package manager must be npm or pnpm");
   if (directory) {
@@ -75,6 +76,21 @@ async function resolveProject(options: CreateOptions): Promise<{ target: string;
       }
       directory = answer.trim() || "my-backts-app";
     }
+    if (!options.template) {
+      const answer = await select({
+        message: "Application template",
+        initialValue: template,
+        options: [
+          { value: "basic", label: "Basic", hint: "Function handlers (default)" },
+          { value: "framework", label: "Framework", hint: "Modules, controllers and services" },
+        ],
+      });
+      if (typeof answer === "symbol") {
+        cancel("Project creation cancelled.");
+        return null;
+      }
+      template = answer;
+    }
     if (!options.pm) {
       const answer = await select({
         message: "Package manager",
@@ -91,7 +107,7 @@ async function resolveProject(options: CreateOptions): Promise<{ target: string;
   if (!directory) throw new Error("Provide a project directory: backts create my-api --pm npm");
   const issue = directoryIssue(directory);
   if (issue) throw new Error(issue);
-  return { target: resolve(directory), pm };
+  return { target: resolve(directory), pm, template };
 }
 
 function writeTemplate(target: string, pm: string, template: string): void {
@@ -100,7 +116,7 @@ function writeTemplate(target: string, pm: string, template: string): void {
   function copy(source: string, destination: string): void {
     for (const item of readdirSync(source, { withFileTypes: true })) {
       const from = join(source, item.name);
-      const to = join(destination, item.name === "gitignore" ? ".gitignore" : item.name === "package.json.template" ? "package.json" : item.name);
+      const to = join(destination, item.name === "gitignore" || item.name === "npmrc" ? `.${item.name}` : item.name === "package.json.template" ? "package.json" : item.name);
       if (item.isDirectory()) {
         mkdirSync(to);
         copy(from, to);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { unusedPort, request } from "../integration/nativeServer.ts";
@@ -37,7 +37,8 @@ const prepare: (operation: "build" | "coverage", root: string) => Promise<number
 } finally {
   rmSync(typeDirectory, { recursive: true, force: true });
 }
-const source = resolve(cwd, "src/main.ts");
+// 两种模板的问候语分别由入口和 Hello 模块拥有。
+const source = resolve(cwd, existsSync(resolve(cwd, "src/hello.ts")) ? "src/hello.ts" : "src/main.ts");
 const original = readFileSync(source, "utf8");
 const child = spawn(process.execPath, [bin, "dev", "--", String(port)], { cwd, stdio: ["ignore", "pipe", "pipe"] });
 let output = "";

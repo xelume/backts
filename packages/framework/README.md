@@ -97,4 +97,4 @@ provideController((resolve) => new TodoController(resolve.get(service)), todoCon
 
 旧 createApplication({ modules: [...] }) 改为 createApplication({ module: AppModule })，用 defineModule({ name: 'AppModule', imports: [...] }) 声明根节点。旧 scope.mount(child) 改为当前模块的 imports: [child]。每个模块补充唯一名称。core 的函数式入口不变。
 
-当前提供显式 token 与同步工厂解析，不提供装饰器或反射注入。scriptc 0.0.36 的简单方法装饰器报 SC1090；最小复现和未来升级步骤见 ../../experiments/decorators/README.md。源码仍以 TS 分发，工作区原生用例验证真实消费者。
+当前提供显式 token 与同步工厂解析，不提供装饰器或反射注入。源码以 TypeScript 分发，通过 CLI 编译为原生程序。

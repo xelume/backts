@@ -1,6 +1,6 @@
 {
   "name": "@backts/core",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "description": "Composable HTTP primitives for native TypeScript backend services.",
   "exports": {
@@ -16,7 +16,7 @@
     "test:build": "backts build --tests"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://registry.qlqs.work/"
   },
   "devDependencies": {
     "@backts/cli": "workspace:*"

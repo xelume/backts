@@ -1,6 +1,6 @@
 {
   "name": "create-backts",
-  "version": "0.1.0",
+  "version": "0.0.2",
   "type": "module",
   "description": "Create a BackTS application.",
   "engines": {
@@ -14,7 +14,7 @@
     "README.md"
   ],
   "publishConfig": {
-    "access": "public"
+    "registry": "https://registry.qlqs.work/"
   },
   "scripts": {
     "build": "tsdown src/bin.ts --format esm --platform node --target node24",

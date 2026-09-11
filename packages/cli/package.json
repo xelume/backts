@@ -1,6 +1,6 @@
 {
   "name": "@backts/cli",
-  "version": "0.1.0",
+  "version": "0.0.2",
   "type": "module",
   "description": "Create, develop and build BackTS native applications.",
   "engines": {
@@ -29,7 +29,7 @@
     "README.md"
   ],
   "publishConfig": {
-    "access": "public"
+    "registry": "https://registry.qlqs.work/"
   },
   "scripts": {
     "build": "tsdown",

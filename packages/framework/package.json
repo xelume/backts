@@ -1,6 +1,6 @@
 {
   "name": "@backts/framework",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "description": "Optional application modules and controller composition for BackTS.",
   "exports": {
@@ -17,6 +17,6 @@
     "@backts/core": "workspace:*"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://registry.qlqs.work/"
   }
 }

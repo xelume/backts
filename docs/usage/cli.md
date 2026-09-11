@@ -1,18 +1,34 @@
 # BackTS CLI
 
-CLI 用 Node 执行开发工具，应用用 scriptc 编译为原生可执行文件。当前已验证 macOS ARM64、Node 24+、clang/平台 SDK、scriptc 0.0.36、TypeScript 7.0.2。Windows 原生开发命令目前拒绝执行，其他 Unix 平台仍需实际验证。
+CLI 用 Node 执行开发工具，应用用 scriptc 编译为原生可执行文件。当前已验证 macOS ARM64、Node 24+、clang/平台 SDK；编译器和 TypeScript 随 CLI 安装，版本要求见[环境说明](gettingStarted.md#环境要求)。Windows 原生开发命令目前拒绝执行，其他 Unix 平台仍需实际验证。
 
 ## 创建与开发
 
-以下公网入口需先发布三个包；当前尚未发布：
+使用以下命令创建 BackTS 应用。先按下一节配置认证，再创建项目：
 
 ```sh
-npm create backts@latest my-api
+npm create backts@latest --registry=https://registry.qlqs.work/ -- my-api --yes
 cd my-api
 npm run dev
 ```
 
-创建命令支持 `--pm npm|pnpm`、`--skip-install`、`--yes`。交互终端使用 Clack 输入目录、校验输入并选择包管理器；Ctrl+C 取消时返回退出码 1，尚未创建文件。`--yes`、CI 或非交互环境跳过询问，必须给出目录，包管理器从调用环境检测，无法检测时使用 npm。默认只提供 basic 模板，内容随 CLI 版本固定，无远程模板拉取。目标必须不存在或为空目录，不覆盖已有文件。
+## 私有 npm 仓库配置
+
+BackTS 包从 `https://registry.qlqs.work/` 安装。
+
+basic 和 framework 模板自带以下 `.npmrc` 配置，创建后会自动安装依赖。已有项目手动接入时可追加这一行：
+
+```ini
+@backts:registry=https://registry.qlqs.work/
+```
+
+第三方依赖继续使用消费环境的默认 registry。`create-backts` 没有 scope，不能通过 `@backts:registry` 定位，因此创建命令仍需显式指定 registry。创建工具自身的下载使用该私库，私库需提供或代理其第三方依赖。
+
+需要认证时，先执行 `npm login --registry=https://registry.qlqs.work/`，或通过用户级 npm 配置/CI secret 注入该 registry 的凭据。不要将真实 token 写入项目文件。模板只包含 registry 映射，不包含认证信息。
+
+## 创建行为
+
+创建命令支持 `--pm npm|pnpm`、`--skip-install`、`--yes`。交互终端使用 Clack 输入目录、校验输入、选择模板和包管理器；Ctrl+C 取消时返回退出码 1，尚未创建文件。`--yes`、CI 或非交互环境跳过询问，必须给出目录，包管理器从调用环境检测，无法检测时使用 npm。未传 `--template` 时，交互终端提供 Basic（默认，普通函数处理器）与 Framework（模块、Controller、Service）选择；显式传参跳过模板选择。`--yes`、CI 或非交互环境未指定模板时使用 basic，内容随 CLI 版本固定，无远程模板拉取。目标必须不存在或为空目录，不覆盖已有文件。
 
 默认安装使用 `install --ignore-scripts`，不批准依赖构建脚本。安装失败返回非零退出码，保留项目并给出恢复指引。`--skip-install` 可以先生成文件，再单独安装。
 
@@ -23,6 +39,7 @@ package.json       普通版本依赖；不包含 workspace 协议
 src/main.ts        / 和 /health 路由
 tsconfig.json     独立配置（无仓库继承）
 .gitignore
+.npmrc            @backts 私库配置，不含凭据
 README.md
 ```
 
@@ -51,61 +68,14 @@ CLI 不替用户停止已有服务；启动前应确认目标端口可用。自�
 - @backts/cli：Node JS 命令、编译能力、内置模板；公开根 API runCli 与 /compiler API compileNative。
 - create-backts：调用 CLI 的创建入口；不复制模板。
 
-命令通过 Commander 注册在 CLI 的 `src/commands` 中，入口负责组装与返回退出码；创建交互使用 `@clack/prompts`。这两个依赖仅属于 CLI，不进入 core 或原生应用。构建与开发进程继续由现有编译器和进程管理模块负责。
+scriptc 0.0.36 存在裸 TS 包导入限制，CLI 在 .scriptc/inputs 中整理源码，不修改应用源文件。动态 import、require、跨包相对导入、任意 JS npm 包和 tsconfig paths 不受支持。
 
-CLI 源码采用无扩展名的相对 import/export。tsdown 构建 Node ESM 和类型声明到 dist，命令入口为 `dist/bin.mjs`；tsc 负责类型检查。发布 dist 和模板，tsdown 仅为开发依赖，安装发布包即可运行；环境要求仍为 Node 24+。
-
-create/dev 的命令注册与实现分别放在 `commands/create.ts`、`commands/dev.ts` 中；创建流程按输入确认、模板写入、依赖安装组织为本地函数。`native/compiler.ts`、`native/tests.ts`、`runtime/processes.ts` 保留各自复用职责，`runtime/packageInfo.ts` 根据 dist 产物位置管理版本、模板和 CLI 子进程入口路径。开发时的编译子进程也使用 dist/bin.mjs。
-
-原生测试发现器通过 CLI 的公开编译入口复用原有能力。scriptc 的裸 TS 包导入限制仍存在，CLI 在 .scriptc/inputs 中整理源码，不修改应用源文件。动态 import、require、跨包相对导入、任意 JS npm 包和 tsconfig paths 不受支持。
-
-## 发布前的仓库外验收
-
-先安装工作区依赖。在仓库根依次运行打包命令；CLI 和创建器的 prepack 执行类型检查与构建（以下目录可替换为新的临时目录）：
-
-```sh
-mkdir -p /tmp/backts-cli-acceptance/artifacts /tmp/backts-cli-acceptance/bootstrap
-pnpm --filter @backts/core pack --pack-destination /tmp/backts-cli-acceptance/artifacts
-pnpm --filter @backts/cli pack --pack-destination /tmp/backts-cli-acceptance/artifacts
-pnpm --filter create-backts pack --pack-destination /tmp/backts-cli-acceptance/artifacts
-```
-
-在 bootstrap 目录安装 CLI 与创建器 tarball，再执行其中的真实 bin 创建 sibling 项目：
-
-```sh
-cd /tmp/backts-cli-acceptance/bootstrap
-npm install --ignore-scripts --no-audit --no-fund ../artifacts/backts-cli-0.1.0.tgz ../artifacts/create-backts-0.1.0.tgz
-node node_modules/create-backts/dist/bin.mjs ../my-api --skip-install --yes
-cd ../my-api
-npm install --ignore-scripts --no-audit --no-fund ../artifacts/backts-core-0.1.0.tgz ../artifacts/backts-cli-0.1.0.tgz
-```
-
-这里用 tarball 替代尚未发布的两个依赖版本；不使用 workspace 链接、源码路径引用或复制仓库构建脚本。随后回到 backts 仓库执行：
-
-```sh
-node tests/cli/packedApp.ts /tmp/backts-cli-acceptance/my-api
-```
-
-验收包括类型检查、静态分析、原生构建、HTTP、开发失败恢复、连续保存、关闭释放端口和 start。该脚本会暂时修改测试项目 main.ts 并恢复，请只针对专用验收项目运行。安装需要网络与主机权限，HTTP 验收需要允许监听本机临时端口。
-
-## 发布状态
-
-四个包配置为可分发，尚未提交或发布。npm 包名/组织权限、版本意图工具和发布流程还需在首次正式发布前落实；建议采用 Changesets。升级 CLI 时应同步检查模板固定的 core/framework 兼容版本，不能只修改一个版本号后跳过仓库外验收。
-
-## 原生测试准备与仓库任务
+## 原生测试命令
 
 `backts analyze --tests` 分析当前包的 tests/**/*.native.ts，`backts build --tests` 只构建这些测试，输出 .scriptc/<文件名>，不运行它们。--tests 不能与 --entry/--out 混用；未找到入口或输出重名时失败。旧 `backts coverage`（包括 --tests）保留为 analyze 的兼容别名。
-
-工作区内日常使用根目录 `pnpm dev/build/typecheck/analyze/test/check`。安装依赖后即可使用 CLI；build 只构建原生应用。check 显式串行执行 build、typecheck、analyze 和 test。core 和 CLI 均无自身 build 步骤；原生测试发现器由 CLI 拥有，应用不引用仓库相对路径脚本。详细执行顺序见 [检查与测试](testing.md)。
 
 start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；带选项前缀的应用参数仍需放在 `--` 后。
 
 ## 框架模板
 
-使用 `backts create my-app --template framework --skip-install` 生成框架式应用，默认 basic 保持轻量函数处理器。仓库外 tarball 验证框架模板时还须打包并安装 @backts/framework，与 core 一起提供；模板不依赖仓库路径。
-
-```sh
-pnpm --filter @backts/framework pack --pack-destination /tmp/backts-cli-acceptance/artifacts
-```
-
-包版本工具尚未建立，本次未提交或发布；正式发布需先建立版本意图与发布检查流程。
+使用 `backts create my-app --template framework` 生成框架式应用；默认 basic 使用普通函数处理器。创建时自动生成私库配置并安装依赖。framework 模板包含 `@backts/framework` 和 `@backts/core` 依赖。

@@ -14,8 +14,8 @@
     "analyze": "backts analyze"
   },
   "dependencies": {
-    "@backts/core": "0.1.0",
-    "@backts/framework": "0.1.0"
+    "@backts/core": "0.0.1",
+    "@backts/framework": "0.0.1"
   },
   "devDependencies": {
     "@backts/cli": "__CLI_VERSION__",
