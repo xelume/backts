@@ -1,6 +1,6 @@
-import { mkdirSync, readFileSync, realpathSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, realpathSync, writeFileSync, existsSync, rmSync, copyFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";
+import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { API, DiagnosticCategory } from "typescript/unstable/sync";
@@ -131,12 +131,18 @@ export async function compileNative(options: CompileOptions): Promise<number> {
   }
   writeFileSync(resolve(stage, "sourceMap.json"), JSON.stringify(mappings, null, 2));
   const args = [operation, stagedEntry];
-  if (operation === "build") args.push("-o", resolve(cwd, output!));
+  // scriptc 在输出目录写 module0.c/ll 等固定文件；每个入口必须隔离后端产物。
+  const stagedOutput = resolve(stage, "output", basename(output ?? "app"));
+  if (operation === "build") {
+    mkdirSync(dirname(stagedOutput), { recursive: true });
+    args.push("-o", stagedOutput);
+  }
   const compilerPackage = createRequire(import.meta.url).resolve("scriptc/package.json");
   const compiler = resolve(dirname(compilerPackage), "dist/bootstrap.js");
   if (operation === "build") mkdirSync(dirname(resolve(cwd, output!)), { recursive: true });
   // 保留完整输出用于静态分析判定，并还原诊断中的临时路径。
   function restorePaths(text: string): string {
+    if (operation === "build") text = text.replaceAll(stagedOutput, resolve(cwd, output!));
     for (const [name, source] of Object.entries(mappings)) text = text.replaceAll(resolve(stage, name), source);
     return text;
   }
@@ -150,6 +156,10 @@ export async function compileNative(options: CompileOptions): Promise<number> {
     child.once("close", (status) => {
       process.stdout.write(restorePaths(stdout));
       process.stderr.write(restorePaths(stderr));
+      if (operation === "build" && status === 0) {
+        try { copyFileSync(stagedOutput, resolve(cwd, output!)); }
+        catch (error) { reject(error); return; }
+      }
       if (operation === "coverage" && !stdout.includes("fully static — this program has no dynamic remainder.")) accept(1);
       else accept(status ?? 1);
     });

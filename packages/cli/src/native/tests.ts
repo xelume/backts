@@ -1,6 +1,8 @@
 import { readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { compileNative } from "./compiler";
+import { availableParallelism } from "node:os";
+import { scheduleNativeTests } from "./testScheduler";
 /** 原生测试入口与稳定的二进制名称；同名输出禁止覆盖。 */
 export interface NativeTest {
   entry: string;
@@ -30,13 +32,12 @@ export function discoverNativeTests(packageRoot: string): NativeTest[] {
   });
 }
 
-/** 串行分析或构建当前包的原生测试；先验证全部输出名，失败立即停止。 */
-export async function prepareNativeTests(operation: "build" | "coverage", packageRoot: string): Promise<number> {
+/** 有限并发分析或构建；jobs 默认最多 2，1 为串行。失败后不派发新任务，等待在途任务结束。 */
+export async function prepareNativeTests(operation: "build" | "coverage", packageRoot: string, jobs: number = Math.min(2, availableParallelism())): Promise<number> {
+  if (!Number.isSafeInteger(jobs) || jobs < 1) throw new Error("jobs must be a positive safe integer");
   const tests = discoverNativeTests(packageRoot);
-  for (const test of tests) {
+  return scheduleNativeTests(tests, jobs, async (test) => {
     console.log(`[native:${operation === "coverage" ? "analyze" : operation}] ${test.name}`);
-    const status = await compileNative({ operation, entry: test.entry, output: resolve(packageRoot, ".scriptc", test.name), cwd: packageRoot });
-    if (status !== 0) return status;
-  }
-  return 0;
+    return compileNative({ operation, entry: test.entry, output: resolve(packageRoot, ".scriptc", test.name), cwd: packageRoot });
+  });
 }

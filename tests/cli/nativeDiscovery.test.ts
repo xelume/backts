@@ -37,12 +37,17 @@ test("public CLI analyzes and builds native tests outside the workspace, preserv
       assert.equal(result.status, 0, result.stderr);
       assert.match(result.stdout, /fully static/);
     }
-    const build = invoke(["build", "--tests"]);
+    writeFileSync(join(root, "tests/b.native.ts"), 'console.log("second native test ok");');
+    const build = invoke(["build", "--tests", "--jobs", "2"]);
     assert.equal(build.status, 0, build.stderr);
     assert.match(spawnSync(join(root, ".scriptc/a"), [], { encoding: "utf8" }).stdout, /native test ok/);
+    assert.match(spawnSync(join(root, ".scriptc/b"), [], { encoding: "utf8" }).stdout, /second native test ok/);
+    for (const file of ["module0.c", "module0.ll", "module0.o"]) {
+      assert(!existsSync(join(root, ".scriptc", file)), "backend intermediates must not share the final output directory");
+    }
     writeFileSync(join(root, "tests/a.native.ts"), 'import "./missing";');
     writeFileSync(join(root, "tests/z.native.ts"), 'console.log("must not compile");');
-    const failure = invoke(["build", "--tests"]);
+    const failure = invoke(["build", "--tests", "--jobs", "1"]);
     assert.notEqual(failure.status, 0);
     assert(!existsSync(join(root, ".scriptc/z")), "must stop before compiling later tests");
   } finally { rmSync(root, { recursive: true, force: true }); }

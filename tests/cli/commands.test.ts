@@ -85,6 +85,10 @@ test("test entry selection accepts defaults, rejects explicit conflicting option
   try {
     mkdirSync(join(cwd, "tests"));
     for (const command of ["build", "analyze", "coverage"]) {
+      for (const jobs of ["0", "-1", "1.5", "abc", "Infinity", "9007199254740992"]) {
+        assert.notEqual(invoke([command, "--tests", "--jobs", jobs], cwd).status, 0);
+      }
+      assert.match(invoke([command, "--jobs", "2"], cwd).stderr, /requires --tests/);
       const missing = invoke([command, "--tests"], cwd);
       assert.equal(missing.status, 1);
       assert.match(missing.stderr, /No \*\.native\.ts test entries found/);

@@ -57,9 +57,11 @@ dev 监听项目目录中的 TS/JSON 变动，忽略 node_modules、.git、.scri
 
 模板不保存 package.json。构建时从各包的版本声明生成 dist/projectVersions.json，create 使用这份清单统一生成应用 package.json。应用初始版本为 0.1.0，BackTS 与工具链直接依赖使用清单中的精确版本。升级依赖后重新构建和发布 CLI，无需修改模板。发布检查和创建入口的关联规则见[版本与发布](../../docs/releasing.md)。
 
-`backts coverage` 是 `backts analyze` 的兼容别名。`backts analyze --tests` 分析当前包 tests/**/*.native.ts，`backts build --tests` 编译这些入口到 .scriptc/<文件名>，不执行它们。--tests 不与 --entry/--out 混用。入口按路径排序，忽略普通 TS 文件和符号链接，缺少入口或输出重名会失败，首个编译失败终止后续工作。
+`backts coverage` 是 `backts analyze` 的兼容别名。`backts analyze --tests` 分析当前包 tests/**/*.native.ts，`backts build --tests` 编译这些入口到 .scriptc/<文件名>，不执行它们。--tests 不与 --entry/--out 混用。入口按路径排序，忽略普通 TS 文件和符号链接，缺少入口或输出重名会失败，首个失败停止派发新任务，等待已启动任务结束后返回失败；并发时诊断按任务完成顺序输出。
 
-`@backts/cli/testing` 公开 `discoverNativeTests(packageRoot)` 和 `prepareNativeTests(operation, packageRoot)`；后者的底层 operation 为 build/coverage，返回退出码，发现或解析异常抛出。两者沿用上述发现、输出和失败契约，应用包目录应使用绝对路径。
+`backts build --tests --jobs 1` 和 `backts analyze --tests --jobs 1` 可恢复串行执行。`--jobs` 仅适用于 `--tests`，必须为正安全整数；默认并发数为 CPU 可用并行度与 2 的较小值。不同入口使用独立的源码与后端暂存目录，成功后才将产物复制到最终输出路径；不要同时针对同一个包启动多个测试编译命令。
+
+`@backts/cli/testing` 公开 `discoverNativeTests(packageRoot)` 和 `prepareNativeTests(operation, packageRoot, jobs?)`；后者的底层 operation 为 build/coverage，返回退出码，发现或解析异常抛出。两者沿用上述发现、输出和失败契约，应用包目录应使用绝对路径。
 
 start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；带选项前缀的应用参数仍需放在 `--` 后。
 
