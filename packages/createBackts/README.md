@@ -2,7 +2,7 @@
 
 BackTS 应用创建入口，复用 @backts/cli，不包含第二套模板或创建逻辑。
 
-src/bin.ts 通过 tsdown 构建为 dist/bin.mjs，调用 CLI 公开 API。prepack 检查类型并构建，发布包安装后即可运行。
+纳入源码管理的 bin.mjs 是安装时的稳定命令入口，加载 dist/bin.mjs。src/bin.ts 通过 tsdown 构建为 dist/bin.mjs，调用 CLI 公开 API。prepack 检查类型并构建，发布包安装后即可运行。
 
 使用（先配置该私库认证；私库需提供或代理创建工具的第三方依赖）：
 

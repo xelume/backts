@@ -7,9 +7,10 @@
     "node": ">=24"
   },
   "bin": {
-    "create-backts": "dist/bin.mjs"
+    "create-backts": "bin.mjs"
   },
   "files": [
+    "bin.mjs",
     "dist",
     "README.md"
   ],

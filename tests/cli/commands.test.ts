@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const cli = fileURLToPath(new URL("../../packages/cli/dist/bin.mjs", import.meta.url));
+const cli = fileURLToPath(new URL("../../packages/cli/bin.mjs", import.meta.url));
 const coreVersion = JSON.parse(readFileSync(new URL("../../packages/core/package.json", import.meta.url), "utf8")).version;
 const cliVersion = JSON.parse(readFileSync(new URL("../../packages/cli/package.json", import.meta.url), "utf8")).version;
-const initializer = fileURLToPath(new URL("../../packages/createBackts/dist/bin.mjs", import.meta.url));
+const initializer = fileURLToPath(new URL("../../packages/createBackts/bin.mjs", import.meta.url));
 function invoke(args: string[], cwd: string, bin = cli) {
   return spawnSync(process.execPath, [bin, ...args], { cwd, encoding: "utf8", timeout: 15000 });
 }

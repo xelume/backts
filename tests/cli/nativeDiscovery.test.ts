@@ -24,7 +24,7 @@ test("public CLI analyzes and builds native tests outside the workspace, preserv
   const { spawnSync } = await import("node:child_process");
   const { fileURLToPath } = await import("node:url");
   const { readFileSync, existsSync } = await import("node:fs");
-  const cli = fileURLToPath(new URL("../../packages/cli/dist/bin.mjs", import.meta.url));
+  const cli = fileURLToPath(new URL("../../packages/cli/bin.mjs", import.meta.url));
   const root = mkdtempSync(join(tmpdir(), "native-cli-"));
   const invoke = (args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd: root, encoding: "utf8", timeout: 30000 });
   try {

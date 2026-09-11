@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { request, unusedPort } from "../integration/nativeServer.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const cli = join(root, "packages/cli/dist/bin.mjs");
+const cli = join(root, "packages/cli/bin.mjs");
 
 async function withDev(verify: (state: {
   cwd: string; port: number; source: string; original: string;

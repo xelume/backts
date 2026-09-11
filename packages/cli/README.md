@@ -21,7 +21,8 @@ CLI 使用 Commander 注册命令，入口组装 `src/commands` 中的命令模�
 目录按职责组织：
 
 ```text
-tsdown.config.ts                 构建命令入口、公开 API 和类型声明
+bin.mjs                         安装时即可链接的稳定命令入口
+tsdown.config.ts                 构建命令实现、公开 API 和类型声明
 build/projectVersions.ts         构建时读取各包与工具链元数据
 dist/                            发布的 Node ESM 产物
 src/
@@ -44,7 +45,7 @@ src/
     packageInfo.ts               包版本和资源路径
 ```
 
-tsdown 将源码构建到 dist，命令入口为 `dist/bin.mjs`，公开类型声明从源码生成。普通 Node ESM 可以直接导入 `@backts/cli`、`@backts/cli/compiler` 和 `@backts/cli/testing`。
+tsdown 将源码构建到 dist，命令入口为纳入源码管理的 `bin.mjs`，它加载 `dist/bin.mjs`，公开类型声明从源码生成。普通 Node ESM 可以直接导入 `@backts/cli`、`@backts/cli/compiler` 和 `@backts/cli/testing`。
 
 源码相对导入省略扩展名，tsc 负责类型检查，tsdown 负责构建。修改 CLI 后运行 `pnpm --filter @backts/cli build`；prepack 自动检查并构建。create/dev 的注册与实现放在各自命令文件中，编译、测试发现和进程管理保留独立模块；包资源路径以 dist 产物位置为基准。
 

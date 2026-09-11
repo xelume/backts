@@ -32,5 +32,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Check template release consumers
         run: pnpm changeset:check
+      - name: Verify fresh workspace command links
+        run: pnpm test:bootstrap
       - name: Verify native applications and packed packages
         run: pnpm release:check

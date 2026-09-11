@@ -61,3 +61,9 @@ CI 配置随代码交付，不代表远端 Secret 或仓库权限已配置。正
 检查失败时修复问题后重跑工作流。部分包已上传时不改动其版本；Changesets 跳过 registry 中已有版本，继续剩余发布。已发布的错误版本通过新的 changeset 修复，不覆盖或删除旧版本。
 
 日常 main 工作流只用于正式 latest 发布。next/beta 等预发布需要另行制定分支、dist-tag 和进入/退出规则，不在当前流程中临时开启。
+
+## 首次安装与命令入口
+
+CLI 和 create-backts 的 package.json.bin 指向纳入 Git 和发布包的 bin.mjs，由它加载 dist/bin.mjs。安装依赖时即可创建命令链接，后续按依赖顺序构建 CLI 和示例，无需再次安装。不要把命令入口改回尚未生成的 dist 文件。
+
+`pnpm test:bootstrap` 在临时工作区排除 node_modules、dist 和原生产物后，使用已填充的 pnpm store 离线安装、检查所有 backts 命令链接，再构建两个示例。该测试包含安装操作，本地应在获准的宿主环境执行，CI 在正常依赖安装后执行。普通发布检查另行验证 tarball 的稳定命令入口。

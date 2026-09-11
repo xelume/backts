@@ -33,10 +33,12 @@ test("packed CLI and initializer generate both templates using only shipped Back
     const initializerPkg = JSON.parse(readFileSync(join(directory, "node_modules/create-backts/package.json"), "utf8"));
     assert.equal(frameworkPkg.dependencies["@backts/core"], coreVersion);
     assert.equal(initializerPkg.dependencies["@backts/cli"], cliPkg.version);
+    const cliEntry = join(packedCli, cliPkg.bin.backts);
+    const initializerEntry = join(directory, "node_modules/create-backts", initializerPkg.bin["create-backts"]);
     const { compileNative } = await import(pathToFileURL(join(packedCli, "dist/compiler.mjs")).href);
     for (const template of ["basic", "framework"]) {
       const cwd = join(directory, template);
-      const entry = template === "basic" ? [join(packedCli, "dist/bin.mjs"), "create"] : [join(directory, "node_modules/create-backts/dist/bin.mjs")];
+      const entry = template === "basic" ? [cliEntry, "create"] : [initializerEntry];
       const result = spawnSync(process.execPath, [...entry, cwd, "--template", template, "--skip-install", "--yes"], { cwd: directory, encoding: "utf8", timeout: 15000 });
       assert.equal(result.status, 0, result.stderr);
       const pkg = JSON.parse(readFileSync(join(cwd, "package.json"), "utf8"));
@@ -53,7 +55,7 @@ test("packed CLI and initializer generate both templates using only shipped Back
       }
       assert.equal(await compileNative({ operation: "build", entry: "src/main.ts", output: ".scriptc/app", cwd }), 0);
     }
-    const invalid = spawnSync(process.execPath, [join(packedCli, "dist/bin.mjs"), "create", join(directory, "invalid"), "--template", "unknown", "--skip-install"], { encoding: "utf8" });
+    const invalid = spawnSync(process.execPath, [cliEntry, "create", join(directory, "invalid"), "--template", "unknown", "--skip-install"], { encoding: "utf8" });
     assert.notEqual(invalid.status, 0);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });

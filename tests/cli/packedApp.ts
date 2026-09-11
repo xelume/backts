@@ -7,7 +7,7 @@ import { unusedPort, request } from "../integration/nativeServer.ts";
 
 // 在仓库外安装 tarball 后运行：node tests/cli/packedApp.ts /absolute/app/path。
 const cwd = resolve(process.argv[2]!);
-const bin = resolve(cwd, "node_modules/@backts/cli/dist/bin.mjs");
+const bin = resolve(cwd, "node_modules/@backts/cli/bin.mjs");
 const port = await unusedPort();
 for (const args of [["doctor"], ["analyze"], ["build"]]) {
   const result = spawnSync(process.execPath, [bin, ...args], { cwd, stdio: "inherit" });

@@ -19,7 +19,8 @@
     "changeset:check": "node scripts/checkChangesets.ts",
     "version-packages": "pnpm changeset:check && pnpm changeset version",
     "pack:check": "pnpm --recursive --workspace-concurrency=1 --filter './packages/*' --if-present run pack:dry-run",
-    "release": "node scripts/releasePackages.ts"
+    "release": "node scripts/releasePackages.ts",
+    "test:bootstrap": "node --test tests/bootstrap.test.ts"
   },
   "devDependencies": {
     "@backts/cli": "workspace:*",
