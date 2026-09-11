@@ -57,6 +57,7 @@ true / 0.0.0.0 会监听所有 IPv4 网卡，包括可能的局域网或公网�
 | `readJson()` | 每请求只可调用一次；返回 unknown，消费者必须校验 |
 | `json(status, serializedJson)` | 接受已经 JSON.stringify 的字符串，设置 JSON Content-Type |
 | `noContent()` | 发送 204，无响应体 |
+| `empty(status?)` | 发送指定空响应状态，默认 204，不添加 Content-Type |
 | `header(name, value)` | 只能在响应提交前设置 |
 | `HttpError(status, message)` | message 可公开给客户端，不应包含秘密或内部错误信息 |
 

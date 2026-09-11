@@ -1,6 +1,6 @@
 {
   "name": "@backts/core",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "type": "module",
   "description": "Composable HTTP primitives for native TypeScript backend services.",
   "exports": {

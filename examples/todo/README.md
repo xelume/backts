@@ -53,7 +53,7 @@ Todo 为 `{ id: number, title: string, completed: boolean }`。标题去除首�
 `AppModule` 通过 imports 引入 `TodoModule` 和 `HealthModule`。TodoModule 通过 providers/controllers 声明仓储、Service 和 Controller，framework 在每次应用装配时创建并复用实例，导入模块文件不会创建仓储实例；main.ts 配置全局中间件、静态目录并启动应用。TodoModule 直接使用 `defineModule` 声明；应用级测试可通过 `overrides: [valueProvider(todoRepository, fakeRepository)]` 替换仓储，无需重写 Controller 装配。URL 和响应契约不变；默认应用的数据隔离，显式复用同一仓储时共享数据。
 
 
-Controller 的列表、详情、创建和更新方法统一返回业务数据，HTTP 映射与 Controller 放在同一文件，通过 framework 的 `defineController`、`jsonRoute` 和 `noContentRoute` 自动注册与响应，不再手写序列化器。状态码、响应头、输入规则和领域错误映射仍由应用声明。
+Controller 的列表、详情、创建和更新方法统一返回业务数据，HTTP 映射与 Controller 放在同一文件，通过 framework 的 `controller` 和 HTTP 方法入口自动注册与响应；删除方法无返回值时自动发送 204，不再手写序列化器。状态码、响应头、输入规则和领域错误映射仍由应用声明。
 
 ## 查询与页面
 

@@ -1,30 +1,37 @@
 # @backts/framework
 
-可选的应用框架，依赖 @backts/core 公开入口。提供具名模块树、Controller 工厂和路由描述；HTTP、结果处理、日志及资源生命周期仍由 core 拥有。
+可选的应用框架，依赖 @backts/core 公开入口。提供具名模块树、函数式接口和依赖装配；HTTP、结果处理、日志及资源生命周期仍由 core 拥有。
 
 ```ts
-import { createApplication, defineModule, factoryProvider, provideController } from '@backts/framework';
+import { createApplication, defineModule, controller, get } from '@backts/framework';
 
-const repository = factoryProvider('TodoRepository', (_resolve) => createRepository());
-const service = factoryProvider('TodoService', (resolve) => new TodoService(resolve.get(repository)));
+const HelloModule = defineModule({
+  name: 'HelloModule',
+  controllers: [controller({
+    routes: [get('', () => ({ message: 'Hello BackTS' }))],
+  })],
+});
+const app = createApplication({ module: HelloModule });
+await app.run(3000);
+```
 
+简单接口直接返回业务结果，不要求 Controller/Service 类、转调 action、async 或未使用的 HttpContext 参数。有独立业务规则时保留 Service，使用控制器装配回调获取依赖：
+
+```ts
+const repository = factoryProvider('TodoRepository', () => createRepository());
+const service = factoryProvider('TodoService', resolve => new TodoService(resolve.get(repository)));
 const TodoModule = defineModule({
   name: 'TodoModule',
   prefix: '/todos',
   providers: [repository, service],
-  controllers: [provideController((resolve) => new TodoController(resolve.get(service)), todoController)],
-  exports: [service],
+  controllers: [controller((resolve): RoutesOptions => {
+    const todos = resolve.get(service);
+    return { routes: [get('/:id', context => todos.get(Number(context.param('id'))))] };
+  })],
 });
-const AppModule = defineModule({
-  name: 'AppModule',
-  prefix: '/api',
-  imports: [TodoModule],
-});
-const app = createApplication({ module: AppModule });
-await app.run(3000);
 ```
 
-TodoController、TodoService 和仓储属于应用，todoController 是接口声明。工厂可返回类实例、普通对象或值，无基类要求。默认模块用 providers/controllers 声明装配；configure 保留给高级注册。完整用法见 examples/todo 和 CLI framework 模板。
+上例还需从 `@backts/framework` 导入 `factoryProvider` 和类型 `RoutesOptions`，并提供应用自己的仓储和 Service。框架负责依赖解析、实例复用和隔离；业务决定依赖关系与输入校验。完整用法见 examples/todo 和 CLI framework 模板。
 
 ## 模块契约
 
@@ -65,16 +72,38 @@ scope.controller(create, bind) 每次调用工厂一次；是否共享实例由�
 
 ## Controller 声明
 
-默认使用返回值 Controller；业务声明接口，framework 注册路由、绑定实例、发送响应并执行异常映射：
+默认使用 `controller({ routes })`，声明可直接放进模块的 controllers 数组。需要依赖时使用 `controller(resolve => ({ routes }))`，装配回调每次应用/模块注册执行一次，处理器通过闭包持有解析后的依赖。不要在请求时调用 resolve，也不要在静态声明中捕获需要按应用隔离的可变业务状态。
+
+- `get / post / put / patch / del / head / options` 均使用 `(path, handle, options?)`，直接表达 HTTP 方法；自定义方法仍可使用 `json(method, path, handle, options?)`。处理器接受 HttpContext，可省略未使用的参数，支持同步或异步返回，普通处理器的结果类型自动推导。options 包括 status、transforms 和 middleware；transforms 接收异步结果解析后的类型。
+- 方法入口无显式 status 时，有返回数据发送 JSON 200，无返回值或 undefined 发送 204。null、false、0 和空字符串都是数据。同步和异步处理器遵循同一规则。
+- 显式 status 优先；204 忽略返回值且禁止 transforms。无返回值也可显式发送 201 等空响应，不添加 JSON Content-Type。205/304 等无正文状态仅适用于空结果适配，不接受 JSON 数据。
+- head 显式声明 HEAD 路由，core 抑制响应体；options 不自动设置 Allow 或 CORS 策略。
+- controller 支持 mapException 和 interceptors。静态配置在声明时快照，装配回调返回的配置在装配时快照。
+- 处理器可以设置响应头，不能自行发送响应。异常或异步拒绝经过相同错误边界。空结果不支持 transforms；已有数据的转换器若返回 undefined，则发送空响应。
+- 已删除新增的顶层 noContent 导出；业务统一使用 HTTP 方法入口。底层 HttpContext.noContent() 负责发送 204。
+
+scriptc 0.0.36 的纯 void 泛型限制由 CLI 按框架函数身份与处理器类型适配到 `@backts/framework/native` 子路径，业务无需返回占位值或指定 204。该子路径服务于编译器，不是业务路由入口。内联控制器装配回调仍需标注 `: RoutesOptions`，异步处理器带类型化 transforms 时仍需显式完整返回类型（如 `post<Promise<Message>>`）。
 
 ```ts
-import { defineController, jsonRoute, noContentRoute } from '@backts/framework';
+import { del } from '@backts/framework';
+
+// 无返回值，自动 204。
+del('/:id', context => { service.remove(Number(context.param('id'))); });
+// 返回业务结果，自动 JSON 200。
+del('/:id', context => service.remove(Number(context.param('id'))));
+```
+
+### 类控制器声明
+
+需要类实例的应用可使用返回值 Controller，framework 注册路由、绑定实例、发送响应并执行异常映射：
+
+```ts
+import { defineController, jsonRoute } from '@backts/framework';
 
 const todoController = defineController<TodoController>({
   routes: [
     jsonRoute({ method: 'GET', path: '/:id', action: (controller: TodoController, context) => controller.get(context) }),
     jsonRoute({ method: 'POST', path: '', status: 201, action: (controller: TodoController, context) => controller.create(context) }),
-    noContentRoute({ method: 'DELETE', path: '/:id', action: (controller: TodoController, context) => controller.remove(context) }),
   ],
   mapException: (error) => error instanceof TodoInputError ? new HttpError(400, error.message) : undefined,
 });
@@ -84,17 +113,16 @@ provideController((resolve) => new TodoController(resolve.get(service)), todoCon
 ```
 
 - jsonRoute 保留每条接口的结果类型并自动 JSON.stringify，默认状态 200，创建接口显式使用 201。返回对象、数组或 JSON 标量；不支持 undefined、函数、循环对象和流。业务无需传入序列化器。
-- noContentRoute 接受 Promise<void> 的 action，成功后发送 204。action 可以设置响应头，但两种接口都禁止自行发送响应；违反约定交给 core 错误路径，已发送的响应不会被覆盖。
 - jsonRoute.transforms 在 action 成功后、序列化前依次转换同一结果类型，可异步，不能发送响应。JSON 状态校验与响应发送复用 core.resultHandler，204/205/304 不能用作 JSON 状态。HEAD 保持 core 的显式路由规则，不自动生成。
 - mapException 仅处理 Error 实例，返回 HttpError 或 undefined；undefined 保留原异常，非 Error 抛出值直接传播。未知错误由 core 隐藏为 500，HttpError 保持原状态。映射器自己抛错也交给 core。
 - Controller 的 interceptors 复用 core Middleware：顺序进入、await next 后逆序返回，可短路或用 try/finally 清理。异常边界先于 interceptors 和接口 middleware 进入，包围它们及 action；只作用于该 Controller 的接口。没有匹配路由、模块外中间件、404/405 不经过它。
-- jsonRoute/noContentRoute 复制配置与中间件数组，defineController 快照注册器与映射函数；后续修改原始声明不影响绑定。同一声明可用于多个独立实例，无实例缓存。
+- jsonRoute 复制配置与中间件数组，defineController 快照注册器与映射函数；后续修改原始声明不影响绑定。同一声明可用于多个独立实例，无实例缓存。
 - scriptc 0.0.36 不支持按字符串读取实例方法、Function.call 或绑定方法引用。因此 action 使用有类型的直接调用回调；不使用 any、动态引擎或反射。异构结果通过每个 jsonRoute 的泛型实例化保持静态类型。
 
-高级直接响应仍可使用原有 bindControllerRoutes<T>([{ method, path, handle, middleware? }]) 或绑定函数，适用于自定义响应适配。已有 API 保持兼容；返回值声明是框架模板的默认方式。
+高级直接响应仍可使用原有 bindControllerRoutes<T>([{ method, path, handle, middleware? }]) 或绑定函数，适用于自定义响应适配。函数式 controller 是框架模板的默认方式。
 
-## 迁移与装饰器
+## 开发约束
 
-旧 createApplication({ modules: [...] }) 改为 createApplication({ module: AppModule })，用 defineModule({ name: 'AppModule', imports: [...] }) 声明根节点。旧 scope.mount(child) 改为当前模块的 imports: [child]。每个模块补充唯一名称。core 的函数式入口不变。
+当前不承担旧版本兼容要求。API 替换时同步迁移消费者并删除旧入口。
 
 当前提供显式 token 与同步工厂解析，不提供装饰器或反射注入。源码以 TypeScript 分发，通过 CLI 编译为原生程序。

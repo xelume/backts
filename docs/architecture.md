@@ -70,7 +70,7 @@ flowchart TD
 | `examples/todo/src/todos/module.ts` | Todo 依赖选择与实例装配 |
 | `packages/cli/src/native/compiler.ts` | 仅开发环境使用的 TS7 源码图整理与编译调用 |
 
-HttpServer、ApplicationLifecycle、ManagedRuntime、RequestPipeline、RequestErrors 没有从包根导出。现有 Router、HttpContext 集成方法保留兼容，应用优先使用 Application 和 RouteGroup。未为了隐藏历史 API 引入新的接口层或破坏迁移。
+HttpServer、ApplicationLifecycle、ManagedRuntime、RequestPipeline、RequestErrors 没有从包根导出。Router、HttpContext 集成方法供当前运行时使用，应用优先使用 Application 和 RouteGroup。API 调整按当前消费者迁移，不保留旧版本兼容层。
 
 ## 稳定契约
 
@@ -122,7 +122,7 @@ scriptc 对跨 unknown 参数的自定义异常判断有限制，所以在传输
 
 `http/resultHandler.ts` 由 core 拥有，将类型化结果处理器适配为已有 Handler。它在处理成功后依次转换、显式序列化和发送 JSON，不新增请求管线或路由注册机制。转换阶段保持结果类型，响应结构包装由序列化函数拥有。所有步骤的异常进入原有错误边界，响应完成仍由 HttpServer 观察。
 
-framework 的 jsonRoute 复用此适配器并根据泛型结果自动序列化；Todo 和 framework 模板采用返回值 Controller。core 的显式序列化与直接响应 API 保持兼容。`resultServer.native.ts` 与 `results.test.ts` 验证原生结果转换、配置快照、并发隔离、短路、HEAD、错误恢复和禁止重复发送。
+framework 的 jsonRoute 复用此适配器并根据泛型结果自动序列化；Todo 和 framework 模板采用函数式返回值接口。core 提供显式序列化与直接响应 API。`resultServer.native.ts` 与 `results.test.ts` 验证原生结果转换、配置快照、并发隔离、短路、HEAD、错误恢复和禁止重复发送。
 
 ## 声明式模块与路由
 
@@ -136,11 +136,13 @@ Todo 的 appModule.ts 组合 TodoModule 与 HealthModule；TodoModule 在每次�
 
 framework/controller.ts 拥有类型化接口声明、配置快照、实例绑定、JSON/204 适配和 Error 映射执行。每条 jsonRoute 在类型擦除前保存泛型序列化闭包；各接口可返回不同类型，不通过 unknown 或反射统一序列化。声明最终注册进 core 的同一路由表与请求链。
 
-应用保留 action、输入验证、返回数据和错误映射规则，业务 Service 不依赖 framework。当前 scriptc 不支持字符串方法选择或方法引用，action 必须显式调用实例方法；不为此引入动态引擎或编译期转译。
+framework/functionalController.ts 提供 controller 和 get/post/put/patch/del/head/options 方法入口，保留严格 json，移除顶层 noContent。方法与响应策略独立：有结果默认 JSON 200，无结果默认 204；显式 status 优先。CLI routeLowering 按框架声明身份与类型适配纯 void 路由到公开的 framework/native 子路径，原始源码先验证类型，业务文件不被改写。core.resultHandler 的可选 emptyStatus 保持旧严格 JSON 契约；HttpContext.empty 负责空响应状态。它将直接业务处理器适配到已有 ControllerEndpoint 与异常边界，保留每个接口的具体结果类型；同步和异步结果经 await 适配到 core 的异步结果处理。controller 静态配置在声明时快照，有依赖的装配回调按应用/模块执行并在返回时快照，不保存运行期 resolver。
+
+应用保留处理函数、输入验证、返回数据和错误映射规则，业务 Service 不依赖 framework。现有 defineController/provideController 继续支持类实例与显式 action。当前 scriptc 不支持字符串方法选择或方法引用；函数式接口避免重复方法转调，不引入动态引擎或编译期转译。functionalController.native.ts 与 framework.test.ts 验证新入口的同步/异步结果、配置快照、依赖装配与响应边界。
 
 ## 依赖装配所有权
 
-provider.ts 保存类型化 token、默认工厂、替换绑定和可选生命周期；providerResolver.ts 检查模块可见性并解析依赖；controllerProvider.ts 将解析器接到已有 Controller 注册器。application.ts 先快照模块与绑定、验证导出，再解析 providers、注册 controllers，最后执行兼容 configure。
+provider.ts 保存类型化 token、默认工厂、替换绑定和可选生命周期；providerResolver.ts 检查模块可见性并解析依赖；controllerProvider.ts 将解析器接到已有 Controller 注册器。application.ts 先快照模块与绑定、验证导出，再解析 providers、注册 controllers，最后执行自定义 configure。
 
 scriptc 不支持 unknown 容器字段，因此实例不放入擦除类型的通用 Map。每个 token 的泛型闭包仅在同步装配期间保存以唯一 slot 区分的临时值，finally 清空，业务实例由消费者持有。该实现不提供运行期 get 或异步工厂解析。
 

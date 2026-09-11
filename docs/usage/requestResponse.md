@@ -75,6 +75,7 @@ app.post("/validated-items", async (context) => {
 | --- | --- |
 | `json(status, text)` | 发送已序列化 JSON 字符串 |
 | `noContent()` | 204，无响应体 |
+| `empty(status?)` | 指定空响应状态，默认 204 |
 | `bytes(status, contentType, buffer)` | 原始字节，自动设置 Content-Length |
 | `header(name, value)` | 设置响应头，必须在响应提交前调用 |
 | `redirect(path)` | 308 同站点绝对路径重定向 |

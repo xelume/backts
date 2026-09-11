@@ -15,7 +15,7 @@ test("both generated templates compile through public package entries outside th
       const result = spawnSync(process.execPath, [`${root}packages/cli/dist/bin.mjs`, "create", cwd, "--template", template, "--skip-install", "--yes"], { encoding: "utf8" });
       assert.equal(result.status, 0, result.stderr);
       const pkg = JSON.parse(readFileSync(join(cwd, "package.json"), "utf8"));
-      assert.equal(pkg.dependencies["@backts/framework"], template === "framework" ? "0.0.1" : undefined);
+      assert.equal(pkg.dependencies["@backts/framework"], template === "framework" ? "0.0.3" : undefined);
       mkdirSync(join(cwd, "node_modules/@backts"), { recursive: true });
       symlinkSync(`${root}node_modules/@types`, join(cwd, "node_modules/@types"));
       for (const name of template === "framework" ? ["core", "framework"] : ["core"]) {

@@ -1,6 +1,6 @@
-import {defineModule, factoryProvider, provideController} from '@backts/framework';
+import {defineModule, factoryProvider, controller} from '@backts/framework';
 import {createInMemoryTodoRepository} from './repository';
-import {TodoController, todoController} from './controller';
+import {todoRoutes} from './controller';
 import {TodoService} from './service';
 
 export const todoRepository = factoryProvider('TodoRepository', (_resolve) => createInMemoryTodoRepository());
@@ -11,5 +11,5 @@ export const TodoModule = defineModule({
   name: 'TodoModule',
   prefix: '/api/todos',
   providers: [todoRepository, todoService],
-  controllers: [provideController((resolve) => new TodoController(resolve.get(todoService)), todoController)],
+  controllers: [controller((resolve) => todoRoutes(resolve.get(todoService)))],
 });

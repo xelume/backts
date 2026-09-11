@@ -21,10 +21,10 @@ test("creates an independent application through both entry points and protects 
       const target = join(cwd, name);
       const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf8"));
       assert.equal(pkg.name, name);
-      assert.equal(pkg.dependencies["@backts/core"], "0.0.1");
+      assert.equal(pkg.dependencies["@backts/core"], "0.0.3");
       assert.equal(pkg.dependencies["@backts/framework"], undefined);
       assert.match(readFileSync(join(target, "src/main.ts"), "utf8"), /createHttpApp/);
-      assert.equal(pkg.devDependencies["@backts/cli"], "0.0.2");
+      assert.equal(pkg.devDependencies["@backts/cli"], "0.0.3");
       assert.equal(pkg.scripts.dev, "backts dev");
       assert.equal(pkg.scripts.analyze, "backts analyze");
       assert.equal(pkg.scripts.coverage, undefined);
@@ -52,7 +52,7 @@ test("invalid commands and unattended input fail before writing files", () => {
       assert.deepEqual(readdirSync(cwd), []);
     }
     assert.equal(invoke(["--help"], cwd).status, 0);
-    assert.match(invoke(["--version"], cwd).stdout, /^0\.0\.2/);
+    assert.match(invoke(["--version"], cwd).stdout, /^0\.0\.3/);
     assert.notEqual(invoke(["start"], cwd).status, 0);
   } finally { rmSync(cwd, { recursive: true, force: true }); }
 });

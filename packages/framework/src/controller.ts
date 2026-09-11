@@ -1,6 +1,6 @@
 import { HttpError, resultHandler, type HttpContext, type Middleware, type RouteGroup, type ResultTransform } from "@backts/core";
 
-/** 保留各接口结果类型的注册描述；由 jsonRoute/noContentRoute 创建。 */
+/** 保留各接口结果类型的注册描述；由 jsonRoute 创建。 */
 export interface ControllerEndpoint<T> {
   register: (routes: RouteGroup, controller: T, middleware: Middleware[]) => void;
 }
@@ -26,14 +26,7 @@ export interface JsonRouteOptions<T, R> {
   middleware?: Middleware[];
 }
 
-export interface NoContentRouteOptions<T> {
-  method: string;
-  path: string;
-  action: (controller: T, context: HttpContext) => Promise<void>;
-  middleware?: Middleware[];
-}
-
-/** 快照声明并生成 Controller 注册器，兼容 scope.controller 的现有装配入口。 */
+/** 快照声明并生成 Controller 注册器，供 scope.controller 装配使用。 */
 export function defineController<T>(options: ControllerOptions<T>): (routes: RouteGroup, controller: T) => void {
   const endpoints = options.routes.map((endpoint) => ({ register: endpoint.register }));
   const mapException = options.mapException;
@@ -72,21 +65,5 @@ export function jsonRoute<T, R>(options: JsonRouteOptions<T, R>): ControllerEndp
       transforms,
       serialize: (value) => JSON.stringify(value),
     }), boundary.concat(middleware));
-  } };
-}
-
-/** action 成功后发送 204；失败走异常边界，禁止 action 自行发送响应。 */
-export function noContentRoute<T>(options: NoContentRouteOptions<T>): ControllerEndpoint<T> {
-  const method = options.method;
-  const path = options.path;
-  const action = options.action;
-  const middleware = options.middleware === undefined ? [] : options.middleware.slice();
-  return { register: (routes, controller, boundary) => {
-    routes.route(method, path, async (context) => {
-      if (context.responded) throw new Error("Controller action cannot send a response directly");
-      await action(controller, context);
-      if (context.responded) throw new Error("Controller action cannot send a response directly");
-      context.noContent();
-    }, boundary.concat(middleware));
   } };
 }

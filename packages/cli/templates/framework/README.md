@@ -1,6 +1,6 @@
 # __PROJECT_NAME__
 
-Framework 模板：模块用 providers/controllers 声明依赖，framework 解析显式工厂并装配 Controller/Service，无反射或基类要求。
+Framework 模板：模块用 controllers 注册函数式接口，业务处理函数直接返回结果。需要依赖时使用 providers 和 controller 装配回调，无反射或基类要求。
 
 运行 `__PM__ run dev`；Node 24+、clang 与平台 SDK 必需。
 

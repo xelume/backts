@@ -1,4 +1,4 @@
-import { createApplication, defineModule, defineController, jsonRoute, noContentRoute, type JsonRouteOptions, type ControllerOptions } from "@backts/framework";
+import { createApplication, defineModule, defineController, jsonRoute, controller, del, type JsonRouteOptions, type ControllerOptions } from "@backts/framework";
 import { HttpError, type HttpContext } from "@backts/core";
 
 class InputError extends Error {}
@@ -26,12 +26,17 @@ const options: ControllerOptions<Controller> = {
     jsonRoute({ method: "GET", path: "/unknown", action: async (_controller: Controller, _context): Promise<string> => { throw new Error("private"); } }),
     jsonRoute({ method: "GET", path: "/http", action: async (_controller: Controller, _context): Promise<string> => { throw new HttpError(409, "conflict"); } }),
     jsonRoute({ method: "GET", path: "/short", action: async (_controller: Controller, _context): Promise<string> => { throw new Error("Short circuit failed"); }, middleware: [async (context, _next) => { context.noContent(); }] }),
-    noContentRoute({ method: "DELETE", path: "/empty", action: async (_controller: Controller, _context): Promise<void> => {} }),
-    noContentRoute({ method: "DELETE", path: "/mapped", action: async (_controller: Controller, _context): Promise<void> => { throw new InputError("invalid"); } }),
-    noContentRoute({ method: "DELETE", path: "/double", action: async (_controller: Controller, context): Promise<void> => { context.json(202, '{"first":true}'); } }),
   ],
   mapException: (error) => error instanceof InputError ? new HttpError(422, error.message) : undefined,
 };
+const emptyController = controller({
+  routes: [
+    del("/empty", async (_context) => {}),
+    del("/mapped", async (_context): Promise<void> => { throw new InputError("invalid"); }),
+    del("/double", async (context) => { context.json(202, '{"first":true}'); }),
+  ],
+  mapException: (error) => error instanceof InputError ? new HttpError(422, error.message) : undefined,
+});
 const declaration = defineController(options);
 routeOptions.path = "/mutated";
 routeOptions.status = 202;
@@ -42,8 +47,8 @@ routeOptions.action = async (_controller, _context) => ({ label: "mutated", id: 
 options.routes.splice(0);
 options.mapException = (_error) => new HttpError(418, "mutated");
 const app = createApplication({ http: { logger: false, onError: async (_error, context) => { events.push(context.path); } }, module: defineModule({ name: "AppModule", imports: [
-  defineModule({ name: "First", prefix: "/first", configure: (scope) => { scope.controller(() => new Controller("first"), declaration); } }),
-  defineModule({ name: "Second", prefix: "/second", configure: (scope) => { scope.controller(() => new Controller("second"), declaration); } }),
+  defineModule({ name: "First", prefix: "/first", controllers: [emptyController], configure: (scope) => { scope.controller(() => new Controller("first"), declaration); } }),
+  defineModule({ name: "Second", prefix: "/second", controllers: [emptyController], configure: (scope) => { scope.controller(() => new Controller("second"), declaration); } }),
 ] }) });
 for (const status of [199, 204, 205, 304, 600, 200.5]) {
   let rejected = false;

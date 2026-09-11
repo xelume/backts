@@ -3,8 +3,9 @@ import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { API } from "typescript/unstable/sync";
+import { API, DiagnosticCategory } from "typescript/unstable/sync";
 import * as ts from "typescript/unstable/ast";
+import { findEmptyRouteCall } from "./routeLowering";
 /** 原生编译输入；cwd 是应用包目录，output 相对于 cwd。 */
 export interface CompileOptions {
   operation: "build" | "coverage";
@@ -14,7 +15,7 @@ export interface CompileOptions {
 }
 
 // scriptc 0.0.36 的 bare npm import 不能保留此框架所需的 TS 类型。
-// 仅整理静态源码依赖，不转译业务逻辑；裸包名必须经 Node 的公开 exports 解析。
+// 整理静态源码依赖，并适配框架纯 void 路由；裸包名必须经 Node 的公开 exports 解析。
 
 /** 经公开 exports 整理静态 TS 源码后调用固定版本 scriptc；返回编译退出码。 */
 export async function compileNative(options: CompileOptions): Promise<number> {
@@ -62,10 +63,26 @@ export async function compileNative(options: CompileOptions): Promise<number> {
     const contents = readFileSync(source, "utf8");
     const snapshot = parser.updateSnapshot({ openFiles: [source] });
     try {
-      const syntax = snapshot.getDefaultProjectForFile(source)?.program.getSourceFile(source);
-      if (!syntax) throw new Error(`Cannot parse TypeScript source: ${source}`);
+      const project = snapshot.getDefaultProjectForFile(source);
+      const syntax = project?.program.getSourceFile(source);
+      if (!syntax || !project) throw new Error(`Cannot parse TypeScript source: ${source}`);
       const edits: { start: number; end: number; text: string }[] = [];
+      const nativeImports = new Map<string, string>();
+      let nextImport = 0;
       function visit(node: ts.Node): void {
+        if (ts.isCallExpression(node)) {
+          const route = findEmptyRouteCall(node, syntax!, project!.checker);
+          if (route !== undefined) {
+            const adapter = realpathSync(createRequire(resolve(route.packageRoot, "package.json")).resolve("@backts/framework/native"));
+            const dependency = copySource(adapter);
+            let identifier = nativeImports.get(dependency);
+            if (identifier === undefined) {
+              do { identifier = `__backtsEmptyRoute${nextImport++}`; } while (contents.includes(identifier));
+              nativeImports.set(dependency, identifier);
+            }
+            edits.push({ start: route.start, end: route.end, text: `${identifier}(${JSON.stringify(route.method)}, ` });
+          }
+        }
         if (ts.isImportEqualsDeclaration(node) || (ts.isCallExpression(node) &&
           (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
            (ts.isIdentifier(node.expression) && node.expression.text === "require")))) {
@@ -82,9 +99,22 @@ export async function compileNative(options: CompileOptions): Promise<number> {
         node.forEachChild(visit);
       }
       visit(syntax);
+      if (nativeImports.size > 0) {
+        // 适配会替换泛型调用，先检查原始源码，避免掩盖业务的参数/类型错误。
+        const errors = project.program.getSemanticDiagnostics(source).filter((item) => item.category === DiagnosticCategory.Error);
+        if (errors.length > 0) {
+          throw new Error(errors.map((item) => {
+            const position = syntax.getLineAndCharacterOfPosition(item.pos);
+            return `${source}:${position.line + 1}:${position.character + 1} TS${item.code}: ${item.text}`;
+          }).join("\n"));
+        }
+      }
       let rewritten = contents;
       for (const edit of edits.sort((left, right) => right.start - left.start)) {
         rewritten = rewritten.slice(0, edit.start) + edit.text + rewritten.slice(edit.end);
+      }
+      for (const [dependency, identifier] of nativeImports) {
+        rewritten += `\nimport { emptyRoute as ${identifier} } from "./${dependency.slice(0, -3)}";\n`;
       }
       writeFileSync(resolve(stage, name), rewritten);
       return name;

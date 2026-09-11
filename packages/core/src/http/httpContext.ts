@@ -69,8 +69,14 @@ export class HttpContext {
   }
 
   noContent(): void {
+    this.empty(204);
+  }
+
+  /** 发送无响应体的成功或错误状态；默认 204，不自动添加 Content-Type。 */
+  empty(status: number = 204): void {
     if (this.sent) throw new Error("Response already sent");
-    this.response.statusCode = 204;
+    if (!Number.isInteger(status) || status < 200 || status > 599) throw new Error("Invalid empty response status");
+    this.response.statusCode = status;
     this.sent = true;
     this.response.end(this.onFinished);
   }

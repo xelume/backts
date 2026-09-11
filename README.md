@@ -13,7 +13,7 @@
 
 依赖方向：framework → core；轻量应用直接消费 core，框架应用消费 framework（HTTP 类型和辅助函数仍来自 core）。运行时不依赖 CLI，CLI 是开发依赖。
 
-examples/basic 展示普通函数处理器；examples/todo 展示框架模块与 Controller/Service。core 内部可以使用类，但用户不需要定义类或继承基类。框架采用显式工厂，不提供反射容器或装饰器。
+examples/basic 展示普通函数处理器；examples/todo 展示框架模块、函数式接口与 Service。core 内部可以使用类，但用户不需要定义类或继承基类。框架采用显式工厂，不提供反射容器或装饰器。
 
 轻量应用通过 @backts/core 的 createHttpApp() 创建，应用类型为 HttpApp。框架式应用通过 @backts/framework 的 createApplication({ module: AppModule }) 创建。两者复用同一 HTTP 与生命周期实现。
 
@@ -56,3 +56,7 @@ npm run start
 静态文件服务已提供：使用 app.serveStatic(root, prefix?) 或对象配置，详细契约见框架 README。Todo 示例页面位于 /static/，外部 public 目录需要随应用分发。
 
 close() 停止接入、平滑关闭空闲连接，并等待活动响应；5 秒后销毁剩余连接，但不主动终止进程。通过 manage 注册资源后，还会等待请求处理结束并逆序释放资源；启动失败逆序回滚，包括部分初始化资源。run() 托管 Ctrl+C，完整关闭流程由第 6 秒的进程退出兜底覆盖。listen()/close() 的资源回调期限由调用方负责，详见[应用生命周期](docs/usage/applicationLifecycle.md)。pnpm 在被中断时仍可能显示 ELIFECYCLE，该提示本身不代表服务残留。
+
+## 当前开发策略
+
+当前项目不承担旧版本兼容要求。API 调整时同步迁移仓库内消费者、测试和文档，删除被替代的入口，不为旧版本保留兼容别名或适配层。

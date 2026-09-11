@@ -1,10 +1,11 @@
 {
   "name": "@backts/framework",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "type": "module",
   "description": "Optional application modules and controller composition for BackTS.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./native": "./src/native.ts"
   },
   "files": [
     "src",

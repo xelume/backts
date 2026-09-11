@@ -1,6 +1,6 @@
 {
   "name": "__PROJECT_NAME__",
-  "version": "0.1.0",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,7 +14,7 @@
     "analyze": "backts analyze"
   },
   "dependencies": {
-    "@backts/core": "0.0.1"
+    "@backts/core": "0.0.3"
   },
   "devDependencies": {
     "@backts/cli": "__CLI_VERSION__",

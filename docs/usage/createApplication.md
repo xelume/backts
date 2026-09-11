@@ -46,4 +46,4 @@ backts create my-api --template basic
 backts create my-service --template framework
 ```
 
-framework 模板使用 @backts/framework 的 createApplication 和模块声明，提供 Controller/Service 显式工厂示例。两种模板共用构建工具；都不要求装饰器或反射。模板已配置所需的 core/framework 依赖。
+framework 模板使用 @backts/framework 的 createApplication 和模块声明，提供直接返回业务结果的函数式接口示例。两种模板共用构建工具；都不要求装饰器或反射。模板已配置所需的 core/framework 依赖。

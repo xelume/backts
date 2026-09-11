@@ -12,6 +12,8 @@ export interface ResultOptions<T> {
   /** 返回有效 JSON 文本；可以在这里将结果包装成应用自己的响应结构。 */
   serialize: (result: T) => string;
   transforms?: ResultTransform<T>[];
+  /** 设置后允许 undefined 结果，并以此状态发送空响应；省略保持严格 JSON 契约。 */
+  emptyStatus?: number;
 }
 
 /** 将返回结果的异步处理器适配到现有路由和中间件。
@@ -25,14 +27,27 @@ export function resultHandler<T>(handle: (context: HttpContext) => Promise<T>, o
     throw new Error("Invalid JSON result status");
   }
   const serialize = options.serialize;
+  const emptyStatus = options.emptyStatus;
+  if (emptyStatus !== undefined && (!Number.isInteger(emptyStatus) || emptyStatus < 200 || emptyStatus > 599)) {
+    throw new Error("Invalid empty response status");
+  }
   const transforms = options.transforms === undefined ? [] : options.transforms.slice();
   return async (context) => {
     assertUnsent(context);
     let result = await handle(context);
     assertUnsent(context);
+    if (emptyStatus !== undefined && result === undefined) {
+      if (transforms.length > 0) throw new Error("Empty routes cannot transform a response body");
+      context.empty(emptyStatus);
+      return;
+    }
     for (const transform of transforms) {
       result = await transform(result, context);
       assertUnsent(context);
+    }
+    if (emptyStatus !== undefined && result === undefined) {
+      context.empty(emptyStatus);
+      return;
     }
     const body = serialize(result);
     assertUnsent(context);

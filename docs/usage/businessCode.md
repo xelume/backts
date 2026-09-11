@@ -17,7 +17,7 @@ await app.run(3000);
 
 ## 使用 framework
 
-`@backts/framework` 依赖 core，提供 createApplication、defineModule 和 ModuleScope。AppModule 是唯一根入口，TodoModule 等功能模块通过 imports 声明；模块用 providers 声明 factoryProvider，用 controllers 声明 provideController，用 exports 公开依赖。框架负责装配；scope.controller/manage/configure 保留给高级用法。
+`@backts/framework` 依赖 core，提供 createApplication、defineModule 和 ModuleScope。AppModule 是唯一根入口，TodoModule 等功能模块通过 imports 声明；模块用 providers 声明 factoryProvider，用 controllers 注册 controller，用 exports 公开依赖。简单接口无需 provider 或业务类。框架负责装配；scope.controller/manage/configure 保留给高级用法。
 
 ```text
 src/main.ts                  引用 AppModule，配置全局中间件和静态目录并启动
@@ -43,8 +43,10 @@ configure 和构造函数应只装配对象；外部资源在 manage 的 start �
 
 模块图在任何工厂执行前完成预检：重复名称、重复导入（包括菱形引用）、循环导入和非法前缀会失败。装配按父模块优先、imports 顺序执行。多次挂载同一功能时创建不同名称的定义；共享资源仍显式注入。不同应用可以复用同一模块声明。
 
-默认使用 defineController({ routes: [jsonRoute(...), noContentRoute(...)], mapException? })，通过 provideController 注册到模块 controllers。framework 负责路由注册、JSON 序列化、状态码、204 发送和异常映射执行。action 保留类型明确的直接调用回调；旧 bindControllerRoutes 和直接响应绑定仍兼容。
+默认使用 `controller({ routes: [get(path, handle), ...], mapException? })`，直接放入模块 controllers。处理器直接写业务，支持同步或异步返回；框架负责路由注册、JSON 序列化、状态码、204 发送和异常映射执行。其他接口使用 post、put、patch、del、head 和 options，签名统一为 (path, handle, options?)。默认有结果时 JSON 200，无返回值/undefined 时 204；null、false、0 保持 JSON 数据。显式状态码优先。顶层 noContent 已删除，json 保留严格 JSON 入口。CLI 自动适配纯 void 处理器，无需业务返回占位值。
+
+有依赖时使用 `controller((resolve): RoutesOptions => { const service = resolve.get(token); return { routes: [...] }; })`，在同步装配期间解析一次，处理器闭包持有 Service。业务规则与校验仍由应用负责。类实例装配使用 defineController/provideController，自定义响应可使用 bindControllerRoutes 或直接响应绑定；这些能力按当前消费者维护，不承担旧版本兼容要求。
 
 [装饰器实验](../../experiments/decorators/README.md)确认当前 scriptc 拒绝方法装饰器，因此这次先稳定模块/路由描述，不引入 @Get 或反射注入。
 
-应用测试通过 createApplication 的 overrides 替换已注册依赖，可选 valueProvider 和 overrideFactory，不修改原模块。Controller 的 interceptors 复用中间件前后执行机制，jsonRoute.transforms 提供发送前的类型化结果转换。
+应用测试通过 createApplication 的 overrides 替换已注册依赖，可选 valueProvider 和 overrideFactory，不修改原模块。Controller 的 interceptors 复用中间件前后执行机制，JSON 路由的 transforms 提供发送前的类型化结果转换。

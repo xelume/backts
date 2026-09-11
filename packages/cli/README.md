@@ -56,4 +56,6 @@ dev 监听项目目录中的 TS/JSON 变动，忽略 node_modules、.git、.scri
 
 start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；带选项前缀的应用参数仍需放在 `--` 后。
 
-`backts create <directory> --template basic|framework`：默认 basic 直接消费 core；framework 生成模块与 Controller/Service 工厂。模板选择不改变编译器或运行时要求。
+`backts create <directory> --template basic|framework`：默认 basic 直接消费 core；framework 生成模块与函数式接口。模板选择不改变编译器或运行时要求。
+
+纯 void/Promise<void> 框架方法调用由 CLI 按真实导出身份适配为原生空响应入口，默认 204；别名和 namespace import 受支持。同名普通函数不改写，适配前检查原始源码类型，错误保留原文件路径。
