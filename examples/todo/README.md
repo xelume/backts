@@ -27,7 +27,7 @@ pnpm --filter @backts/example-todo start
 
 Service 只依赖业务拥有的仓储接口。调用 `createInMemoryTodoRepository()` 直接获得 TodoRepository，无需调用适配方法。工厂通过闭包持有独立状态，直接返回仓储对象，不要求存储实现使用类。
 
-2026-09-10 使用当前锁定的 scriptc 0.0.36 重新验证：把类实例直接传给 TodoService 的两个位置均报 SC2002（record shapes must match exactly or width-coerce）。后续升级先验证类直接返回为 TodoRepository，再运行原生领域、模块隔离和 HTTP 测试。通过后工厂内部可改为直接返回实例，删除委托和过时说明；工厂名称、返回契约和消费者保持不变。不要保留依赖旧编译器必定失败的测试。
+2026-09-10 的 scriptc 0.0.36 验证中，把类实例直接传给 TodoService 报 SC2002。2026-09-14 使用 0.1.1 复测最小类方法仓储转函数记录接口，仍报 SC2002（record shapes must match exactly or width-coerce）。保留现有闭包工厂；当前已没有类包装或委托层需要删除。后续只有在真实存储实现需要类、且原生领域、模块隔离和 HTTP 测试通过时才调整工厂内部实现，仓储契约和消费者保持不变。
 
 ## Todo 示例契约
 

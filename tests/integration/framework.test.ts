@@ -56,6 +56,7 @@ test("controller declarations own JSON responses, empty responses, exception map
     assert.deepEqual(JSON.parse((await expect(port, "DELETE", "/first/double", 202)).body), { first: true });
     const events = JSON.parse((await expect(port, "GET", "/events", 200)).body) as string[];
     assert(events.includes("/first/double"));
+    assert(events.includes("mapped-error-identity"), "exception mapping must preserve the original HttpError object");
     assert(events.indexOf("before:/first/value/1") < events.indexOf("after:/first/value/1"));
     assert(events.includes("after:/first/short"));
     assert(!events.includes("after:/first/mapped"));

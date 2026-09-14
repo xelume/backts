@@ -26,9 +26,13 @@ export interface JsonRouteOptions<T, R> {
   middleware?: Middleware[];
 }
 
+// scriptc 0.1.1 直接抛出可选值会丢失异常类型；参数边界保留原错误对象。
+function throwMappedError(error: HttpError): never { throw error; }
+
 /** 快照声明并生成 Controller 注册器，供 scope.controller 装配使用。 */
 export function defineController<T>(options: ControllerOptions<T>): (routes: RouteGroup, controller: T) => void {
-  const endpoints = options.routes.map((endpoint) => ({ register: endpoint.register }));
+  const endpoints: ControllerEndpoint<T>[] = [];
+  for (const endpoint of options.routes) endpoints.push({ register: endpoint.register });
   const mapException = options.mapException;
   const middleware: Middleware[] = [];
   if (mapException !== undefined) {
@@ -37,7 +41,7 @@ export function defineController<T>(options: ControllerOptions<T>): (routes: Rou
       catch (error) {
         if (!(error instanceof Error)) throw error;
         const mapped = mapException(error);
-        if (mapped !== undefined) throw mapped;
+        if (mapped !== undefined) throwMappedError(mapped);
         throw error;
       }
     });

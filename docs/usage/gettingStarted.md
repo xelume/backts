@@ -12,7 +12,7 @@
 | --- | --- |
 | Node.js | 24+，运行构建工具和测试 |
 | pnpm | 10.33.4，运行本仓库时与根 package.json 的 packageManager 保持一致 |
-| scriptc | 0.0.36，由 CLI 固定依赖并自动安装，无需单独安装 |
+| scriptc | 0.1.1，由 CLI 固定依赖并自动安装，无需单独安装 |
 | TypeScript | 7.0.2，由 CLI 和项目依赖安装，无需全局安装 |
 | 本机编译环境 | clang 与平台 SDK |
 

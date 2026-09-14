@@ -9,7 +9,7 @@ examples/basic 直接消费 core；examples/todo 通过 framework 声明模块�
 框架不复制 Router、RequestPipeline、HttpContext 或生命周期。装饰器与反射容器未实现；显式工厂支持类及普通对象，无强制继承。
 
 
-目标是可组合的中小型原生 HTTP 后端框架。core 提供传输、请求处理与扩展契约，业务拥有领域规则和资源依赖。所有应用通过包根入口消费；当前实现基于 scriptc 0.0.36，不承诺 Node API 全量兼容。
+目标是可组合的中小型原生 HTTP 后端框架。core 提供传输、请求处理与扩展契约，业务拥有领域规则和资源依赖。所有应用通过包根入口消费；当前实现基于 scriptc 0.1.1，不承诺 Node API 全量兼容。
 
 ## 请求与生命周期
 
@@ -130,11 +130,13 @@ framework/module.ts 拥有 defineModule 和 ApplicationModule 声明；applicati
 
 Todo 的 appModule.ts 组合 TodoModule 与 HealthModule；TodoModule 在每次应用装配时创建仓储。main 配置全局中间件、静态目录和启动。scope.mount 和 modules 数组入口迁移为单根 module 与声明式 imports。provider 实例按应用与注册模块复用，资源生命周期仍由 core 管理。
 
-装饰器原生探针位于 experiments/decorators；0.0.36 简单类装饰器通过，方法装饰器报 SC1090。本轮不提供装饰器公共 API 或 CLI 转译。未来可用的装饰器应产出相同声明，不复制模块装配/路由运行时。
+装饰器原生探针位于 experiments/decorators；0.1.1 复测简单类装饰器通过，方法装饰器仍报 SC1090。本轮不提供装饰器公共 API 或 CLI 转译。未来可用的装饰器应产出相同声明，不复制模块装配/路由运行时。
 
 ## Controller 执行边界
 
 framework/controller.ts 拥有类型化接口声明、配置快照、实例绑定、JSON/204 适配和 Error 映射执行。每条 jsonRoute 在类型擦除前保存泛型序列化闭包；各接口可返回不同类型，不通过 unknown 或反射统一序列化。声明最终注册进 core 的同一路由表与请求链。
+
+scriptc 0.1.1 下泛型路由快照使用显式类型数组和循环，避免 map 回调的静态表示回归。可选异常映射结果通过 HttpError 参数边界重新抛出，保留原错误对象及其状态；直接抛出收窄后的可选值会丢失异常类型。原生 HTTP 测试覆盖状态、消息和错误对象身份。
 
 framework/functionalController.ts 提供 controller 和 get/post/put/patch/del/head/options 方法入口，保留严格 json，移除顶层 noContent。方法与响应策略独立：有结果默认 JSON 200，无结果默认 204；显式 status 优先。CLI routeLowering 按框架声明身份与类型适配纯 void 路由到公开的 framework/native 子路径，原始源码先验证类型，业务文件不被改写。core.resultHandler 的可选 emptyStatus 保持旧严格 JSON 契约；HttpContext.empty 负责空响应状态。它将直接业务处理器适配到已有 ControllerEndpoint 与异常边界，保留每个接口的具体结果类型；同步和异步结果经 await 适配到 core 的异步结果处理。controller 静态配置在声明时快照，有依赖的装配回调按应用/模块执行并在返回时快照，不保存运行期 resolver。
 
@@ -144,6 +146,6 @@ framework/functionalController.ts 提供 controller 和 get/post/put/patch/del/h
 
 provider.ts 保存类型化 token、默认工厂、替换绑定和可选生命周期；providerResolver.ts 检查模块可见性并解析依赖；controllerProvider.ts 将解析器接到已有 Controller 注册器。application.ts 先快照模块与绑定、验证导出，再解析 providers、注册 controllers，最后执行自定义 configure。
 
-scriptc 不支持 unknown 容器字段，因此实例不放入擦除类型的通用 Map。每个 token 的泛型闭包仅在同步装配期间保存以唯一 slot 区分的临时值，finally 清空，业务实例由消费者持有。该实现不提供运行期 get 或异步工厂解析。
+实例不放入擦除类型的通用 Map，保留每个 token 的类型化存储。scriptc 0.1.1 可静态编译简单 unknown 记录字段，但 Map<number, unknown> 仍报 SC2009/SC1090，unknown 值上的自定义类 instanceof 也不受支持。每个 token 的泛型闭包仅在同步装配期间保存以唯一 slot 区分的临时值，finally 清空，业务实例由消费者持有。该实现不提供运行期 get 或异步工厂解析。
 
 Controller interceptors 复用 core 请求链，结果 transforms 复用 resultHandler。依赖资源通过 core.manage 启停，没有第二个资源生命周期。默认 Todo 和 framework 模板均使用 providers/controllers 声明；core 仍可完全独立用于函数式应用。

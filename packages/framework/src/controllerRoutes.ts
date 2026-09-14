@@ -14,12 +14,13 @@ export interface ControllerRoute<T> {
  * 不改变路径、方法、HEAD、错误或单次响应语义；注册失败直接传播。
  */
 export function bindControllerRoutes<T>(definitions: ControllerRoute<T>[]): (routes: RouteGroup, controller: T) => void {
-  const snapshot = definitions.map((route) => ({
+  const snapshot: Required<ControllerRoute<T>>[] = [];
+  for (const route of definitions) snapshot.push({
     method: route.method,
     path: route.path,
     handle: route.handle,
     middleware: route.middleware === undefined ? [] : route.middleware.slice(),
-  }));
+  });
   return (routes, controller) => {
     for (const route of snapshot) {
       routes.route(route.method, route.path, (context) => route.handle(controller, context), route.middleware);

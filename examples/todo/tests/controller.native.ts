@@ -9,6 +9,7 @@ class Controller {
   }
 }
 const events: string[] = [];
+const mappedError = new HttpError(422, "invalid");
 const routeOptions: JsonRouteOptions<Controller, { label: string; id: string }> = {
   method: "GET", path: "/value/:id", status: 201,
   action: (controller, context) => controller.value(context),
@@ -27,7 +28,7 @@ const options: ControllerOptions<Controller> = {
     jsonRoute({ method: "GET", path: "/http", action: async (_controller: Controller, _context): Promise<string> => { throw new HttpError(409, "conflict"); } }),
     jsonRoute({ method: "GET", path: "/short", action: async (_controller: Controller, _context): Promise<string> => { throw new Error("Short circuit failed"); }, middleware: [async (context, _next) => { context.noContent(); }] }),
   ],
-  mapException: (error) => error instanceof InputError ? new HttpError(422, error.message) : undefined,
+  mapException: (error) => error instanceof InputError ? mappedError : undefined,
 };
 const emptyController = controller({
   routes: [
@@ -50,6 +51,13 @@ const app = createApplication({ http: { logger: false, onError: async (_error, c
   defineModule({ name: "First", prefix: "/first", controllers: [emptyController], configure: (scope) => { scope.controller(() => new Controller("first"), declaration); } }),
   defineModule({ name: "Second", prefix: "/second", controllers: [emptyController], configure: (scope) => { scope.controller(() => new Controller("second"), declaration); } }),
 ] }) });
+app.use(async (_context, next) => {
+  try { await next(); }
+  catch (error) {
+    if (error instanceof HttpError && error === mappedError) events.push("mapped-error-identity");
+    throw error;
+  }
+});
 for (const status of [199, 204, 205, 304, 600, 200.5]) {
   let rejected = false;
   try { defineController<Controller>({ routes: [jsonRoute({ method: "GET", path: `/invalid/${status}`, status, action: (controller: Controller, context) => controller.value(context) })] })(app.group("/"), new Controller("invalid")); }

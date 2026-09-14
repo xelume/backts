@@ -68,7 +68,11 @@ CLI 不替用户停止已有服务；启动前应确认目标端口可用。自�
 - @backts/cli：Node JS 命令、编译能力、内置模板；公开根 API runCli 与 /compiler API compileNative。
 - create-backts：调用 CLI 的创建入口；不复制模板。
 
-scriptc 0.0.36 存在裸 TS 包导入限制，CLI 在 .scriptc/inputs 中整理源码，不修改应用源文件。动态 import、require、跨包相对导入、任意 JS npm 包和 tsconfig paths 不受支持。
+scriptc 0.1.1 存在裸 TS 包导入限制，CLI 在 .scriptc/inputs 中整理源码，不修改应用源文件。动态 import、require、跨包相对导入、任意 JS npm 包和 tsconfig paths 不受支持。
+
+重复构建保留内容未变的临时输入与后端产物，删除已不在依赖图中的临时源码，由 scriptc 校验源码、配置及工具链后复用缓存。编译失败不覆盖已有可执行文件。删除 .scriptc 可重新生成本地编译输入；scriptc 的全局缓存由编译器独立管理。
+
+scriptc 新增的 import.meta.url/filename/dirname 在此源码整理流程中可能指向临时模块，不能用于定位部署资源。静态资源继续按文档约定相对于进程工作目录配置。
 
 ## 原生测试命令
 

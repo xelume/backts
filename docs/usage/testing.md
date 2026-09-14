@@ -53,6 +53,6 @@ npm exec -- backts build --tests
 
 ## 原生编译限制
 
-scriptc 0.0.36 无法直接静态编译此框架的裸包导入，CLI 按公开 exports 整理 TS 源码图。动态 import、require、跨包相对源码引用和任意 JS 包不受支持。
+scriptc 0.1.1 无法直接静态编译此框架的裸包导入，CLI 按公开 exports 整理 TS 源码图。动态 import、require、跨包相对源码引用和任意 JS 包不受支持。
 
 类型检查成功不等于原生构建成功。analyze 出现 blocker 或动态回退时失败；当前 HTTP aborted 监听可能使 LLVM 后端改用 C 后端，这不等于 JavaScript 动态回退。

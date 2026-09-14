@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, realpathSync, writeFileSync, existsSync, rmSync, copyFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync, existsSync, rmSync, copyFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
@@ -14,7 +14,7 @@ export interface CompileOptions {
   cwd?: string;
 }
 
-// scriptc 0.0.36 的 bare npm import 不能保留此框架所需的 TS 类型。
+// scriptc 0.1.1 的 bare npm import 不能保留此框架所需的 TS 类型。
 // 整理静态源码依赖，并适配框架纯 void 路由；裸包名必须经 Node 的公开 exports 解析。
 
 /** 经公开 exports 整理静态 TS 源码后调用固定版本 scriptc；返回编译退出码。 */
@@ -25,11 +25,15 @@ export async function compileNative(options: CompileOptions): Promise<number> {
   const sourceEntry = realpathSync(resolve(cwd, entry));
   const key = createHash("sha256").update(sourceEntry).digest("hex").slice(0, 12);
   const stage = resolve(cwd, ".scriptc", "inputs", key);
-  rmSync(stage, { recursive: true, force: true });
   mkdirSync(stage, { recursive: true });
-  writeFileSync(resolve(stage, "package.json"), '{"private":true,"type":"module"}\n');
+  // 保留未变输入和后端产物；缓存有效性由 scriptc 按源码、配置和工具链校验。
+  function writeInput(name: string, contents: string): void {
+    const path = resolve(stage, name);
+    if (!existsSync(path) || readFileSync(path, "utf8") !== contents) writeFileSync(path, contents);
+  }
+  writeInput("package.json", '{"private":true,"type":"module"}\n');
   const configuration = { compilerOptions: { target: "ES2022", lib: ["ES2022"], module: "ESNext", moduleResolution: "Bundler", strict: true, noUncheckedIndexedAccess: true, exactOptionalPropertyTypes: true, verbatimModuleSyntax: true, isolatedModules: true, noEmit: true, types: ["node"] } };
-  writeFileSync(resolve(stage, "tsconfig.json"), JSON.stringify(configuration, null, 2));
+  writeInput("tsconfig.json", JSON.stringify(configuration, null, 2));
   const copied = new Map<string, string>();
   const mappings: Record<string, string> = {};
   const parser = new API();
@@ -116,7 +120,7 @@ export async function compileNative(options: CompileOptions): Promise<number> {
       for (const [dependency, identifier] of nativeImports) {
         rewritten += `\nimport { emptyRoute as ${identifier} } from "./${dependency.slice(0, -3)}";\n`;
       }
-      writeFileSync(resolve(stage, name), rewritten);
+      writeInput(name, rewritten);
       return name;
     } finally {
       snapshot.dispose();
@@ -129,7 +133,10 @@ export async function compileNative(options: CompileOptions): Promise<number> {
   } finally {
     parser.close();
   }
-  writeFileSync(resolve(stage, "sourceMap.json"), JSON.stringify(mappings, null, 2));
+  for (const name of readdirSync(stage)) {
+    if (/^module\d+\.ts$/.test(name) && !Object.hasOwn(mappings, name)) rmSync(resolve(stage, name));
+  }
+  writeInput("sourceMap.json", JSON.stringify(mappings, null, 2));
   const args = [operation, stagedEntry];
   // scriptc 在输出目录写 module0.c/ll 等固定文件；每个入口必须隔离后端产物。
   const stagedOutput = resolve(stage, "output", basename(output ?? "app"));

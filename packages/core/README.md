@@ -24,7 +24,7 @@ await app.run(3000);
 
 ## 构建与验证
 
-包以 TypeScript 源码交付，`typecheck` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。scriptc 0.0.36 无法直接静态编译此框架的裸包导入；CLI 通过 `@backts/cli/compiler` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。独立应用通过 `backts build` 使用此能力。
+包以 TypeScript 源码交付，`typecheck` 验证类型，不生成业务二进制。应用入口由消费者交给 scriptc 编译。scriptc 0.1.1 无法直接静态编译此框架的裸包导入；CLI 通过 `@backts/cli/compiler` 整理公开 exports 可达的 TS 源码作为临时输入，不启用动态引擎。详细边界见根 README。独立应用通过 `backts build` 使用此能力。
 
 `tests/httpServer.native.ts` 仅包含框架契约测试路由，通过公开包入口创建应用；不导入 Todo。`tests/compatibility.native.ts` 为类与生命周期探针。
 
@@ -65,7 +65,7 @@ true / 0.0.0.0 会监听所有 IPv4 网卡，包括可能的局域网或公网�
 
 `Router.add/dispatch` 也由源码入口公开；一般应用使用 `createHttpApp()` 即可。`HttpContext.setParameters` 是 Router 的集成接口，不应由业务处理器覆盖。
 
-close() 停止接入新连接，平滑关闭空闲连接，并等待活动响应完成；5 秒后销毁剩余连接。重复调用共享关闭 Promise，整个流程不主动终止进程。响应通过结束回调和连接关闭事件计数，完成后使用 socket.end() 保留发送队列，避免大响应被截断。scriptc 0.0.36 没有提供 closeIdleConnections()/closeAllConnections()，所以连接由框架内部跟踪；server.close 仅支持无参数回调，无法复刻完整 Node 错误回调契约。
+close() 停止接入新连接，平滑关闭空闲连接，并等待活动响应完成；5 秒后销毁剩余连接。重复调用共享关闭 Promise，整个流程不主动终止进程。响应通过结束回调和连接关闭事件计数，完成后使用 socket.end() 保留发送队列，避免大响应被截断。scriptc 0.1.1 没有提供 closeIdleConnections()/closeAllConnections()，所以连接由框架内部跟踪；server.close 仅支持无参数回调，无法复刻完整 Node 错误回调契约。
 
 只有 run() 托管 SIGINT/SIGTERM，建议每进程仅使用一个。首次信号调用完整 close()；正常关闭不强制退出，未通过 manage 注册的资源仍由其所有者负责。连接强制关闭或资源清理失败以状态码 1 退出；第 6 秒的最终退出兜底覆盖初始化等待、HTTP 排空和资源释放。首次信号后的 250ms 内合并重复转发，避免 pnpm 把一次 Ctrl+C 转发多次；窗口后再次收到信号立即销毁连接并以状态码 1 退出，可能中断请求或清理。正常关闭清除定时器，仅移除实例自身的信号回调。listen()/close() 不主动注册信号或接管进程退出。集成测试覆盖空闲连接、大响应完整发送、客户端中断、未完成请求以及 pnpm 进程组残留。
 
