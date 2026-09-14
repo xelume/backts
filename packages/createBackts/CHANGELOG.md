@@ -1,5 +1,13 @@
 # create-backts
 
+## 0.0.5
+
+### Patch Changes
+
+- a4ad987: Upgrade scriptc to 0.1.1 and preserve native build inputs for compiler cache reuse. Keep generic controller snapshots statically compilable and preserve mapped HTTP errors, including their status and object identity, across the compiler's optional-value throw boundary.
+- Updated dependencies [a4ad987]
+  - @backts/cli@0.0.5
+
 ## 0.0.4
 
 ### Patch Changes
