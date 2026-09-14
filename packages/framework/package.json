@@ -1,6 +1,6 @@
 {
   "name": "@backts/framework",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "description": "Optional application modules and controller composition for BackTS.",
   "exports": {
