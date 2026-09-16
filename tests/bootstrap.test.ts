@@ -18,10 +18,12 @@ test("fresh workspace links commands before build and builds both example consum
   try {
     cpSync(source, workspace, {
       recursive: true,
-      filter: (path) => !["node_modules", ".git", "dist", ".scriptc"].includes(basename(path)),
+      filter: (path) => !["node_modules", ".git", "dist", ".scriptc"].includes(basename(path)) &&
+        !["basic", "todo"].some((example) => path === join(source, "examples", example, "build")),
     });
     assert.equal(existsSync(join(workspace, "packages/cli/dist")), false);
     assert.equal(existsSync(join(workspace, "packages/createBackts/dist")), false);
+    for (const example of ["basic", "todo"]) assert.equal(existsSync(join(workspace, "examples", example, "build")), false);
     // 独立于普通测试运行；先由宿主或 CI 安装依赖以填充 pnpm store。
     const installed = run(["install", "--offline", "--frozen-lockfile", "--ignore-scripts"]);
     assert.doesNotMatch(installed, /Failed to create bin/);
@@ -33,6 +35,10 @@ test("fresh workspace links commands before build and builds both example consum
     for (const consumer of [".", "examples/basic", "examples/todo", "packages/core", "packages/createBackts"]) {
       assert.equal(run(["exec", "backts", "--version"], join(workspace, consumer)).trim(), cli.version);
     }
-    for (const example of ["basic", "todo"]) accessSync(join(workspace, "examples", example, ".scriptc/app"), constants.X_OK);
+    for (const example of ["basic", "todo"]) accessSync(join(workspace, "examples", example, "build/app"), constants.X_OK);
+    assert.deepEqual(
+      readFileSync(join(workspace, "examples/todo/build/public/index.html")),
+      readFileSync(join(workspace, "examples/todo/public/index.html")),
+    );
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });

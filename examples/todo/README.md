@@ -48,7 +48,7 @@ Todo 为 `{ id: number, title: string, completed: boolean }`。标题去除首�
 
 示例使用 `app.serveStatic("./public")`。从示例包目录启动后访问 `/`，可以看到 public/index.html。原 API 路由不变。
 
-分发时同时携带可执行文件和 public 目录，并从包含 public 的目录启动；相对路径按进程 cwd 解析，不是按二进制位置解析。框架包中不包含这些示例资源。
+build 自动将可执行文件和 public 放入 build 目录。分发时复制整个 build 目录，执行 `cd build && ./app`；相对路径按进程 cwd 解析，不是按二进制位置解析。框架包中不包含这些示例资源。
 
 `AppModule` 通过 imports 引入 `TodoModule` 和 `HealthModule`。TodoModule 通过 providers/controllers 声明仓储、Service 和 Controller，framework 在每次应用装配时创建并复用实例，导入模块文件不会创建仓储实例；main.ts 配置全局中间件、静态目录并启动应用。TodoModule 直接使用 `defineModule` 声明；应用级测试可通过 `overrides: [valueProvider(todoRepository, fakeRepository)]` 替换仓储，无需重写 Controller 装配。URL 和响应契约不变；默认应用的数据隔离，显式复用同一仓储时共享数据。
 

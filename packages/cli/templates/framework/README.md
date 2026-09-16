@@ -31,7 +31,7 @@ __PM__ run build
 __PM__ run start
 ```
 
-start 只运行已有产物，analyze 是静态编译分析，不是测试覆盖率。原生产物为 `.scriptc/app`，运行该文件无需 Node 或开发依赖。仅在已验证的目标平台分发，新增静态资源需随应用携带。
+start 只运行已有产物，analyze 是静态编译分析，不是测试覆盖率。原生产物为 `build/app`，运行该文件无需 Node 或开发依赖。仅在已验证的目标平台分发，build 自动复制 public；部署时复制整个 build 目录并执行 `cd build && ./app`。
 
 当前框架为实验阶段。支持公开包入口的静态 TS 导入，不支持任意 JavaScript npm 包、动态导入或 tsconfig paths。
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, symlinkSync, mkdirSync } from "node:fs";
+import { mkdtempSync, realpathSync, readFileSync, readdirSync, rmSync, writeFileSync, symlinkSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -156,16 +156,28 @@ test("installation failure returns the package manager status and keeps a recove
 test("start uses the default artifact and forwards positional and explicit application arguments", () => {
   const cwd = mkdtempSync(join(tmpdir(), "backts-start-"));
   try {
-    mkdirSync(join(cwd, ".scriptc"));
-    writeFileSync(join(cwd, ".scriptc/app"), `#!${process.execPath}\nconsole.log(JSON.stringify(process.argv.slice(2)));\n`, { mode: 0o755 });
+    mkdirSync(join(cwd, "build"));
+    writeFileSync(join(cwd, "build/app"), `#!${process.execPath}\nconsole.log(JSON.stringify(process.argv.slice(2)));\n`, { mode: 0o755 });
     const result = invoke(["start", "3100", "--", "--app-option"], cwd);
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), ["3100", "--app-option"]);
-    const forwarded = invoke(["start", "--out", ".scriptc/app", "3200", "--", "--help", "--out", "application-output"], cwd);
+    const forwarded = invoke(["start", "--out", "build/app", "3200", "--", "--help", "--out", "application-output"], cwd);
     assert.equal(forwarded.status, 0, forwarded.stderr);
     assert.deepEqual(JSON.parse(forwarded.stdout), ["3200", "--help", "--out", "application-output"]);
     assert.equal(invoke(["start", "--unknown"], cwd).status, 1);
-    writeFileSync(join(cwd, ".scriptc/app"), `#!${process.execPath}\nprocess.exit(7);\n`, { mode: 0o755 });
+    writeFileSync(join(cwd, "build/app"), `#!${process.execPath}\nprocess.exit(7);\n`, { mode: 0o755 });
     assert.equal(invoke(["start"], cwd).status, 7);
+  } finally { rmSync(cwd, { recursive: true, force: true }); }
+});
+
+
+test("start resolves a custom executable before switching to its directory", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "backts-start-cwd-"));
+  try {
+    mkdirSync(join(cwd, "release"));
+    writeFileSync(join(cwd, "release/server"), `#!${process.execPath}\nconsole.log(process.cwd());\n`, { mode: 0o755 });
+    const result = invoke(["start", "--out", "release/server"], cwd);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), realpathSync(join(cwd, "release")));
   } finally { rmSync(cwd, { recursive: true, force: true }); }
 });

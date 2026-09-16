@@ -1,3 +1,4 @@
 node_modules/
 .scriptc/
 dist/
+build/

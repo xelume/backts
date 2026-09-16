@@ -50,14 +50,14 @@ README.md
 | 命令 | 行为 |
 | --- | --- |
 | `backts dev` | 编译并启动；TS/JSON 修改时串行重新编译、重启 |
-| `backts build` | 构建 src/main.ts 为 .scriptc/app |
+| `backts build` | 构建 src/main.ts 为 build/app，并同步 public 到 build/public |
 | `backts start` | 只启动现有产物 |
 | `backts analyze` | 验证原生静态可编译性，非测试覆盖率 |
 | `backts doctor` | 检查 Node、工具链依赖、clang 和 macOS SDK |
 
 build/dev 支持 `--entry <file>`、`--out <file>`；analyze 支持 --entry；start 支持 --out。使用 `npm exec -- backts dev -- 3100` 或 `pnpm exec backts dev -- 3100` 指定模板应用端口。应用自行解释 `--` 之后的参数。
 
-dev 监听项目目录，忽略 node_modules、.git、.scriptc、dist，不监听项目外链接依赖。源码变化时先编译临时产物，旧服务继续处理请求；编译失败保留旧服务与原产物。成功后先给旧服务最多 1 秒退出，超时强制回收，再原子替换产物并启动新服务。尚未完成的请求可能在开发替换时被中断。连续保存会合并，构建期间发生的变化会在当前构建完成后重新构建。Ctrl+C/SIGTERM 同时清理编译进程与服务进程，并移除临时产物；手动退出仍使用正常的优雅关闭期限。内存状态随重启丢失，不是进程内 HMR。
+dev 监听项目目录，忽略 node_modules、.git、.scriptc、dist、build，不监听项目外链接依赖。源码变化时先编译临时产物，旧服务继续处理请求；编译失败保留旧服务与原产物。成功后先给旧服务最多 1 秒退出，超时强制回收，再原子替换产物并启动新服务。尚未完成的请求可能在开发替换时被中断。连续保存会合并，构建期间发生的变化会在当前构建完成后重新构建。Ctrl+C/SIGTERM 同时清理编译进程与服务进程，并移除临时产物；手动退出仍使用正常的优雅关闭期限。内存状态随重启丢失，不是进程内 HMR。
 
 CLI 不替用户停止已有服务；启动前应确认目标端口可用。自定义输出目录不能放在应用源码中。应用外部资源仍由应用管理。
 
@@ -83,3 +83,5 @@ start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；�
 ## 框架模板
 
 使用[创建应用](createApplication.md#模板选择)中的完整创建命令生成框架式应用；已有 CLI 命令环境也可执行 `backts create my-app --template framework`。默认 basic 使用普通函数处理器。创建时自动生成私库配置并安装依赖。framework 模板包含 `@backts/framework` 和 `@backts/core` 依赖。
+
+build 的 --out 指定可执行文件路径，public 同步到其同级目录；--no-public 跳过资源同步。start 的工作目录为可执行文件所在目录。dev 保持 .scriptc/app 和项目工作目录。

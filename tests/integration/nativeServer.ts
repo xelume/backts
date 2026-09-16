@@ -70,7 +70,7 @@ export async function withServer(
   args: string[] = [],
 ): Promise<void> {
   const port = await unusedPort();
-  const child = spawn(`${root}${binary}`, [String(port), ...args], { cwd: resolve(root, binary, "../.."), stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(resolve(root, binary), [String(port), ...args], { cwd: resolve(root, binary, binary.includes("/build/") ? ".." : "../.."), stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
   let spawnError: Error | undefined;
   child.stdout.on("data", (chunk: Buffer) => { output += chunk.toString(); });

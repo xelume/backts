@@ -6,7 +6,7 @@
 | --- | --- |
 | `npm run typecheck` | 检查应用 TypeScript 类型 |
 | `npm run analyze` | 检查应用能否静态编译 |
-| `npm run build` | 编译应用，输出 `.scriptc/app` |
+| `npm run build` | 编译应用，输出 `build/app` |
 | `npm run dev` | 构建并启动开发服务，监听源码变化 |
 | `npm run start` | 运行已构建的应用 |
 

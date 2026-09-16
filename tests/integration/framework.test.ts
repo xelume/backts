@@ -11,7 +11,7 @@ test("framework accepts plain objects, freezes factories and shares core lifecyc
 });
 
 test("basic consumer serves HTTP without framework or business classes", async () => {
-  await withServer("examples/basic/.scriptc/app", async (port) => {
+  await withServer("examples/basic/build/app", async (port) => {
     assert.deepEqual(JSON.parse((await expect(port, "GET", "/", 200)).body), { message: "Hello BackTS" });
   });
 });

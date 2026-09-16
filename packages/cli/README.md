@@ -12,7 +12,7 @@ backts start
 backts doctor
 ```
 
-默认入口 src/main.ts，产物 .scriptc/app。build/dev 支持 --entry 和 --out；start 支持 --out；analyze 支持 --entry。dev/start 通过 `--` 传递应用参数，例如 `backts dev -- 3100`。
+默认入口 src/main.ts，build 产物 build/app，dev 产物 .scriptc/app。build/dev 支持 --entry 和 --out；start 支持 --out；analyze 支持 --entry。dev/start 通过 `--` 传递应用参数，例如 `backts dev -- 3100`。
 
 create 支持 --pm npm|pnpm、--skip-install、--yes；非交互环境必须给出目录，默认检测 npm/pnpm。拒绝非空目录和目标符号链接。默认安装跳过依赖脚本，失败保留已创建项目。
 
@@ -70,3 +70,7 @@ start/dev 的普通位置参数会传给应用，例如 `backts start 3100`；�
 `backts create <directory> --template basic|framework`：默认 basic 直接消费 core；framework 生成模块与函数式接口。模板选择不改变编译器或运行时要求。
 
 纯 void/Promise<void> 框架方法调用由 CLI 按真实导出身份适配为原生空响应入口，默认 204；别名和 namespace import 受支持。同名普通函数不改写，适配前检查原始源码类型，错误保留原文件路径。
+
+应用 build 成功后将 public 同步到可执行文件同级的 public 目录（删除旧资源，无 public 时清除旧副本）。--out 保持文件路径语义；输出资源目录不能与源 public 重叠。--no-public 可跳过复制，dev 自动使用此选项。start 以可执行文件所在目录为工作目录。
+
+部署时复制整个 build 目录，在目标机器执行 `cd build && ./app`；无需 Node 或开发依赖，目标系统与架构必须兼容。环境变量由部署环境提供，不自动复制 .env。

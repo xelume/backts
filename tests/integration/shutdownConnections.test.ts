@@ -30,9 +30,9 @@ async function holdConnection(port: number, partial: boolean, unmanaged: boolean
 
 async function verifyShutdown(launcher: "binary" | "pnpm" | "unmanaged", secondSignal: boolean, active = false): Promise<void> {
   const port = await unusedPort();
-  const command = launcher === "pnpm" ? "pnpm" : `${root}${launcher === "unmanaged" ? "packages/core/.scriptc/httpServer" : "examples/todo/.scriptc/app"}`;
+  const command = launcher === "pnpm" ? "pnpm" : `${root}${launcher === "unmanaged" ? "packages/core/.scriptc/httpServer" : "examples/todo/build/app"}`;
   const child = spawn(command, launcher === "pnpm" ? ["start", String(port)] : [String(port)], {
-    cwd: launcher === "pnpm" ? root : `${root}examples/todo`,
+    cwd: launcher === "pnpm" ? root : `${root}examples/todo/build`,
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
   });

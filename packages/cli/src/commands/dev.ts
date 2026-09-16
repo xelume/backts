@@ -38,7 +38,7 @@ async function develop(cwd: string, entry: string, output: string, args: string[
       do {
         pending = false;
         console.log("[backts] Building…");
-        compiler = launch(process.execPath, [cliBin, "build", "--entry", entry, "--out", candidate], cwd);
+        compiler = launch(process.execPath, [cliBin, "build", "--entry", entry, "--out", candidate, "--no-public"], cwd);
         const status = await compiler.exited;
         await stop(compiler, 1000);
         compiler = undefined;
@@ -73,7 +73,7 @@ async function develop(cwd: string, entry: string, output: string, args: string[
     rebuilding = rebuild();
     void rebuilding.catch(fail);
   }
-  const ignored = new Set(["node_modules", ".git", ".scriptc", "dist"]);
+  const ignored = new Set(["node_modules", ".git", ".scriptc", "dist", "build"]);
   const watcher = watch(cwd, { recursive: true }, (_event, file) => {
     if (!file) return;
     const parts = file.toString().split(/[\\/]/);

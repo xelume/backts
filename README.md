@@ -62,7 +62,7 @@ npm run start
 
 框架包以 TypeScript 源码交付，应用使用 `backts build` 编译。支持通过公开 exports 的静态 TS 导入，不支持动态 import、require、跨包相对源码引用、任意 JavaScript npm 依赖或 tsconfig paths。类型检查通过后仍需原生分析和构建，详见[编译限制](docs/usage/testing.md#原生编译限制)。
 
-Todo 示例页面位于 `/`，数据保存在内存中，重启清空。静态资源不会嵌入二进制，分发时需携带 `public` 目录；见[静态资源](docs/usage/staticFiles.md)。
+Todo 示例页面位于 `/`，数据保存在内存中，重启清空。静态资源不会嵌入二进制，build 会将它们复制到 `build/public`，分发时复制整个 `build` 目录；见[静态资源](docs/usage/staticFiles.md)。
 
 ## 开发本仓库
 

@@ -30,3 +30,5 @@ root 必须为现有目录，相对路径以进程 cwd 解析，在注册时固�
 - [分发资源与工作目录](distribution.md)
 - [业务路由的匹配优先级](routing.md)
 
+
+应用构建自动同步 public 到 build/public，backts start 在可执行文件目录运行。部署时复制整个 build 目录并执行 `cd build && ./app`。dev 继续读取项目中的 public。
