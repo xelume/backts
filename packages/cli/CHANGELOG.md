@@ -1,5 +1,11 @@
 # @backts/cli
 
+## 0.0.6
+
+### Patch Changes
+
+- 03d4bae: 调整构建产物位置
+
 ## 0.0.5
 
 ### Patch Changes
